@@ -1,0 +1,19 @@
+{
+  "id": "contacts",
+  "name": "Contacts",
+  "version": "1.0.0",
+  "description": "Browse and search family contacts synced from Google Contacts or Apple Contacts.",
+  "entrypoint": "index.html",
+  "runtime": "static",
+  "category": "productivity",
+  "tags": ["contacts", "google", "apple", "address book"],
+  "data_access": {
+    "reads": ["family.members"],
+    "writes": []
+  },
+  "permissions": {
+    "default_audience": "everyone",
+    "requires_approval": false
+  },
+  "storage": "none"
+}

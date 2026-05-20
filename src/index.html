@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contacts</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:           var(--hub-bg, #f9fafb);
+      --card:         var(--hub-surface, #ffffff);
+      --border:       var(--hub-border, #e5e7eb);
+      --border-mid:   var(--hub-border, #d1d5db);
+      --text:         var(--hub-text, #111827);
+      --muted:        var(--hub-text-muted, #6b7280);
+      --accent:       var(--hub-primary, #111827);
+      --accent-fg:    var(--hub-primary-fg, #ffffff);
+      --accent-hover: var(--hub-primary-hover, #374151);
+      --radius:       var(--hub-radius, 0.5rem);
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 15px; }
+    .app { max-width: 640px; margin: 0 auto; padding: 20px 16px 40px; }
+
+    /* Header */
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .header h1 { font-size: 1.5rem; font-weight: 700; }
+    .sync-btn { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 7px 14px; font-size: 0.82rem; font-weight: 600; cursor: pointer; }
+    .sync-btn:disabled { opacity: .5; }
+
+    /* Search */
+    .search-bar { position: relative; margin-bottom: 12px; }
+    .search-bar input { width: 100%; border: 1.5px solid var(--border); border-radius: var(--radius); padding: 10px 14px 10px 38px; font-size: 0.9rem; background: #fff; outline: none; }
+    .search-bar input:focus { border-color: var(--accent); }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 0.9rem; pointer-events: none; }
+
+    /* Filter */
+    .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .filter-chip { padding: 5px 14px; border-radius: 20px; border: 1.5px solid var(--border); background: #fff; font-size: 0.82rem; font-weight: 500; cursor: pointer; color: var(--muted); }
+    .filter-chip.active { border-color: var(--accent); background: var(--accent); color: #fff; }
+
+    /* Contact list */
+    .contact-group { margin-bottom: 6px; }
+    .group-letter { font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; padding: 6px 4px 4px; }
+    .contact-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 6px; display: flex; align-items: center; gap: 14px; }
+    .contact-avatar { width: 42px; height: 42px; border-radius: 50%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 700; color: var(--muted); flex-shrink: 0; }
+    .contact-body { flex: 1; min-width: 0; }
+    .contact-name { font-weight: 600; font-size: 0.95rem; }
+    .contact-details { font-size: 0.8rem; color: var(--muted); margin-top: 2px; display: flex; flex-wrap: wrap; gap: 8px; }
+    .contact-source { font-size: 0.72rem; background: #f3f4f6; border-radius: 10px; padding: 1px 7px; color: var(--muted); white-space: nowrap; }
+    .contact-actions { display: flex; gap: 6px; }
+    .icon-btn { width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--border); background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; text-decoration: none; color: var(--muted); }
+    .icon-btn:hover { border-color: var(--accent); color: var(--text); }
+
+    /* Connections tab */
+    .conn-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .conn-info .name { font-weight: 500; font-size: 0.9rem; }
+    .conn-info .meta { font-size: 0.78rem; color: var(--muted); margin-top: 2px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .provider-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; background: #f3f4f6; color: var(--muted); }
+    .btn-sm { padding: 5px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer; border: 1.5px solid var(--border); background: #fff; color: var(--muted); }
+    .btn-sm:hover { border-color: var(--accent); color: var(--text); }
+
+    /* Empty / tabs */
+    .empty { text-align: center; padding: 48px 20px; color: var(--muted); }
+    .empty h3 { font-size: 1rem; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+    .empty p { font-size: 0.85rem; line-height: 1.5; }
+    .loading { text-align: center; padding: 40px; color: var(--muted); }
+    .count { font-size: 0.8rem; color: var(--muted); margin-bottom: 10px; }
+    .tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 16px; }
+    .tab { padding: 8px 16px; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -2px; background: transparent; border-left: none; border-right: none; border-top: none; }
+    .tab.active { color: var(--text); border-bottom-color: var(--text); }
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--text); color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 0.85rem; z-index: 100; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>Contacts</h1>
+    <button class="sync-btn" id="sync-btn" onclick="syncAll()">Sync now</button>
+  </div>
+  <div id="root"><div class="loading">Loading…</div></div>
+</div>
+
+<script type="module">
+const CONTEXT = window.__CONTEXT_URL ?? "";
+const MEMBER_COLORS = ["#4f46e5","#0891b2","#16a34a","#d97706","#dc2626","#7c3aed","#0d9488"];
+
+let members = [], contacts = [], connections = [];
+let activeTab = "contacts", filterMember = "all", query = "";
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function memberColor(id) {
+  const i = members.findIndex(m => m.id === id);
+  return MEMBER_COLORS[Math.abs(i) % MEMBER_COLORS.length];
+}
+function memberName(id) { return members.find(m => m.id === id)?.name ?? "Unknown"; }
+function initial(name) { return (name || "?")[0].toUpperCase(); }
+
+function contactInitials(name) {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return (name[0] ?? "?").toUpperCase();
+}
+
+function connectionLabel(connectionId) {
+  return connections.find(c => c.id === connectionId)?.label ?? "";
+}
+
+// ── Data ──────────────────────────────────────────────────────────────────────
+async function load() {
+  try {
+    const [membersRes, contactsRes, connRes] = await Promise.all([
+      fetch(`${CONTEXT}?keys=family.members`).then(r => r.json()).catch(() => ({ "family.members": [] })),
+      fetch("/api/contacts/events").then(r => r.json()).catch(() => []),
+      fetch("/api/contacts/connections").then(r => r.json()).catch(() => []),
+    ]);
+    members = membersRes["family.members"] ?? [];
+    contacts = Array.isArray(contactsRes) ? contactsRes : [];
+    connections = Array.isArray(connRes) ? connRes : [];
+  } catch { members = []; contacts = []; connections = []; }
+  render();
+}
+
+async function syncAll() {
+  const btn = document.getElementById("sync-btn");
+  btn.disabled = true; btn.textContent = "Syncing…";
+  await Promise.all(connections.map(c =>
+    fetch(`/api/contacts/connections/${c.id}/sync`, { method: "POST" }).catch(() => {})
+  ));
+  await load();
+  btn.disabled = false; btn.textContent = "Sync now";
+  showToast("Synced");
+}
+
+async function syncConnection(id) {
+  await fetch(`/api/contacts/connections/${id}/sync`, { method: "POST" }).catch(() => {});
+  await load();
+  showToast("Synced");
+}
+
+function showToast(msg) {
+  const el = document.createElement("div");
+  el.className = "toast"; el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2500);
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderContacts() {
+  if (contacts.length === 0 && connections.length === 0) {
+    return `<div class="empty">
+      <h3>No contacts yet</h3>
+      <p>Connect Google Contacts or Apple Contacts in the<br><strong>Connections</strong> tab to sync your address book here.</p>
+    </div>`;
+  }
+
+  let visible = filterMember === "all" ? contacts : contacts.filter(c => c.family_member_id === filterMember);
+
+  if (query.trim()) {
+    const q = query.toLowerCase();
+    visible = visible.filter(c =>
+      c.display_name?.toLowerCase().includes(q) ||
+      c.email?.toLowerCase().includes(q) ||
+      c.phone?.includes(q)
+    );
+  }
+
+  if (visible.length === 0) {
+    return `<div class="empty"><p>No contacts match "${query}".</p></div>`;
+  }
+
+  // Sort by name and group alphabetically
+  visible = [...visible].sort((a, b) => (a.display_name ?? "").localeCompare(b.display_name ?? ""));
+
+  const groups = {};
+  for (const c of visible) {
+    const letter = (c.display_name?.[0] ?? "#").toUpperCase();
+    const key = /[A-Z]/.test(letter) ? letter : "#";
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(c);
+  }
+
+  const countText = `<div class="count">${visible.length} contact${visible.length !== 1 ? "s" : ""}</div>`;
+
+  const groupsHtml = Object.keys(groups).sort().map(letter => `
+    <div class="contact-group">
+      <div class="group-letter">${letter}</div>
+      ${groups[letter].map(c => {
+        const hasEmail = !!c.email;
+        const hasPhone = !!c.phone;
+        const src = connectionLabel(c.connection_id);
+        return `
+          <div class="contact-card">
+            <div class="contact-avatar">${contactInitials(c.display_name ?? "?")}</div>
+            <div class="contact-body">
+              <div class="contact-name">${c.display_name ?? "Unknown"}</div>
+              <div class="contact-details">
+                ${hasEmail ? `<span>${c.email}</span>` : ""}
+                ${hasPhone ? `<span>${c.phone}</span>` : ""}
+                ${src ? `<span class="contact-source">${src}</span>` : ""}
+              </div>
+            </div>
+            <div class="contact-actions">
+              ${hasEmail ? `<a class="icon-btn" href="mailto:${c.email}" title="Email">✉</a>` : ""}
+              ${hasPhone ? `<a class="icon-btn" href="tel:${c.phone}" title="Call">📞</a>` : ""}
+            </div>
+          </div>`;
+      }).join("")}
+    </div>
+  `).join("");
+
+  return countText + groupsHtml;
+}
+
+function renderConnections() {
+  if (connections.length === 0) {
+    return `<div class="empty">
+      <h3>No connections yet</h3>
+      <p>Connect Google Contacts or Apple Contacts to sync your address book into the hub.<br><br>
+      <strong>Google Contacts:</strong> Requires a Google OAuth client ID configured in your hub's environment variables.<br>
+      <strong>Apple Contacts:</strong> Requires an app-specific password.</p>
+    </div>`;
+  }
+  return connections.map(c => `
+    <div class="conn-card">
+      <div class="conn-info">
+        <div class="name">${c.label}</div>
+        <div class="meta">
+          <span class="provider-badge">${c.provider}</span>
+          <span>${memberName(c.family_member_id)}</span>
+          <span>${c.last_synced_at ? "Synced " + new Date(c.last_synced_at).toLocaleDateString() : "Never synced"}</span>
+        </div>
+      </div>
+      <div>
+        <button class="btn-sm" onclick="syncConnection('${c.id}')">Sync</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function render() {
+  const filterHtml = (activeTab === "contacts" && members.length > 1) ? `
+    <div class="filter-bar">
+      <button class="filter-chip ${filterMember === "all" ? "active" : ""}" onclick="setFilter('all')">Everyone</button>
+      ${members.map(m => `<button class="filter-chip ${filterMember === m.id ? "active" : ""}" onclick="setFilter('${m.id}')">${m.name}</button>`).join("")}
+    </div>` : "";
+
+  const searchHtml = activeTab === "contacts" ? `
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input type="search" placeholder="Search name, email, phone…"
+        value="${query.replace(/"/g, "&quot;")}"
+        oninput="setQuery(this.value)" />
+    </div>` : "";
+
+  document.getElementById("root").innerHTML = `
+    <div class="tabs">
+      <button class="tab ${activeTab === "contacts" ? "active" : ""}" onclick="setTab('contacts')">
+        Contacts ${contacts.length > 0 ? `(${contacts.length})` : ""}
+      </button>
+      <button class="tab ${activeTab === "connections" ? "active" : ""}" onclick="setTab('connections')">Connections</button>
+    </div>
+    ${searchHtml}
+    ${filterHtml}
+    ${activeTab === "contacts" ? renderContacts() : renderConnections()}
+  `;
+}
+
+window.syncAll = syncAll;
+window.syncConnection = syncConnection;
+window.setFilter = (m) => { filterMember = m; render(); };
+window.setTab = (t) => { activeTab = t; render(); };
+window.setQuery = (q) => { query = q; render(); };
+
+load();
+</script>
+</body>
+</html>
