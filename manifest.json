@@ -6,14 +6,22 @@
   "entrypoint": "index.html",
   "runtime": "static",
   "category": "productivity",
-  "tags": ["contacts", "google", "apple", "address book"],
+  "tags": [
+    "contacts",
+    "google",
+    "apple",
+    "address book"
+  ],
   "data_access": {
-    "reads": ["family.members"],
+    "reads": [
+      "family.members"
+    ],
     "writes": []
   },
   "permissions": {
     "default_audience": "everyone",
     "requires_approval": false
   },
-  "storage": "none"
+  "storage": "none",
+  "icon": "👥"
 }
