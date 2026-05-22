@@ -1,21 +1,14 @@
 {
   "id": "contacts",
   "name": "Contacts",
-  "version": "1.0.0",
-  "description": "Browse and search family contacts synced from Google Contacts or Apple Contacts.",
+  "version": "2.0.0",
+  "description": "Shared household address book — doctors, schools, neighbors, emergency contacts. Add manually or import from a .vcf file.",
   "entrypoint": "index.html",
   "runtime": "static",
-  "category": "productivity",
-  "tags": [
-    "contacts",
-    "google",
-    "apple",
-    "address book"
-  ],
+  "category": "family",
+  "tags": ["contacts", "address book", "emergency", "family"],
   "data_access": {
-    "reads": [
-      "family.members"
-    ],
+    "reads": [],
     "writes": []
   },
   "permissions": {
