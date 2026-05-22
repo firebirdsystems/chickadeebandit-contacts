@@ -138,7 +138,9 @@
   </div>
 </div>
 
-<script>
+<script type="module">
+import { hubConfirm, esc } from "/hub-sdk.js";
+
   let contacts = [];
   let editingId = null;
   let activeCategory = '';
@@ -244,7 +246,7 @@
   }
 
   async function deleteContact() {
-    if (!editingId || !confirm('Delete this contact?')) return;
+    if (!editingId || !await hubConfirm({ message: "Delete this contact?", confirmLabel: "Delete", destructive: true })) return;
     await fetch(`/api/contacts/${editingId}`, { method: 'DELETE' });
     closeForm();
     load();
@@ -290,12 +292,18 @@
     }
   }
 
-  // ── Utils ───────────────────────────────────────────────────────────────────
-  function esc(s) {
-    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
   load();
+
+  window.openForm     = openForm;
+  window.closeForm    = closeForm;
+  window.saveContact  = saveContact;
+  window.deleteContact = deleteContact;
+  window.setCategory  = setCategory;
+  window.openImport   = openImport;
+  window.closeImport  = closeImport;
+  window.onDrag       = onDrag;
+  window.onDrop       = onDrop;
+  window.handleFile   = handleFile;
 </script>
 </body>
 </html>
