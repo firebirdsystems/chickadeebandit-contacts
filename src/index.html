@@ -140,6 +140,7 @@
 
 <script type="module">
 import { hubConfirm, esc } from "/hub-sdk.js";
+import { categories, filterContacts } from "./logic.js";
 
   let contacts = [];
   let editingId = null;
@@ -152,22 +153,12 @@ import { hubConfirm, esc } from "/hub-sdk.js";
     render();
   }
 
-  function categories() {
-    const cats = [...new Set(contacts.map(c => c.category).filter(Boolean))].sort();
-    return cats;
-  }
-
   function render() {
-    const q = document.getElementById('searchInput').value.trim().toLowerCase();
-    const filtered = contacts.filter(c => {
-      if (activeCategory && c.category !== activeCategory) return false;
-      if (!q) return true;
-      return [c.displayName, c.email, c.phone, c.address, c.notes]
-        .filter(Boolean).some(v => v.toLowerCase().includes(q));
-    }).sort((a, b) => a.displayName.localeCompare(b.displayName));
+    const q = document.getElementById('searchInput').value.trim();
+    const filtered = filterContacts(contacts, q, activeCategory);
 
     // Category filter chips
-    const cats = categories();
+    const cats = categories(contacts);
     const fr = document.getElementById('filterRow');
     fr.innerHTML = cats.length ? `
       <button class="chip ${!activeCategory ? 'active' : ''}" onclick="setCategory('')">All</button>
