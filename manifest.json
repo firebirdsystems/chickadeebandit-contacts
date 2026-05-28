@@ -5,7 +5,7 @@
   "description": "Shared household address book — doctors, schools, neighbors, emergency contacts. Add manually or import from a .vcf file.",
   "entrypoint": "index.html",
   "runtime": "static",
-  "category": "family",
+  "category": "general",
   "tags": ["contacts", "address book", "emergency", "family"],
   "data_access": {
     "reads": [],
