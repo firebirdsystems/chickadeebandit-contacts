@@ -231,16 +231,47 @@ import { categories, filterContacts } from "./logic.js";
 
     const url    = editingId ? `/api/contacts/${editingId}` : '/api/contacts';
     const method = editingId ? 'PATCH' : 'POST';
-    await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const prevContacts = contacts;
+    let tempId = null;
+
+    if (editingId) {
+      contacts = contacts.map(c => c.id === editingId ? { ...c, ...body } : c);
+    } else {
+      tempId = `__pending_${Date.now()}`;
+      contacts = [...contacts, { id: tempId, ...body }];
+    }
     closeForm();
-    load();
+    render();
+
+    try {
+      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (!res.ok) throw new Error('Failed');
+      if (tempId !== null) {
+        const created = await res.json();
+        contacts = contacts.map(c => c.id === tempId ? created : c);
+        render();
+      }
+    } catch {
+      contacts = prevContacts;
+      render();
+    }
   }
 
   async function deleteContact() {
     if (!editingId || !await hubConfirm({ message: "Delete this contact?", confirmLabel: "Delete", destructive: true })) return;
-    await fetch(`/api/contacts/${editingId}`, { method: 'DELETE' });
+    const prevContacts = contacts;
+    const id = editingId;
+    contacts = contacts.filter(c => c.id !== id);
     closeForm();
-    load();
+    render();
+
+    try {
+      const res = await fetch(`/api/contacts/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed');
+    } catch {
+      contacts = prevContacts;
+      render();
+    }
   }
 
   // ── Import ──────────────────────────────────────────────────────────────────
