@@ -140,192 +140,250 @@
 
 <script type="module">
 import { hubConfirm, esc } from "/hub-sdk.js";
-import { categories, filterContacts } from "./logic.js";
+import { categories, filterContacts, parseVCards } from "./logic.js";
 
-  let contacts = [];
-  let editingId = null;
-  let activeCategory = '';
+const DB = window.__DB_URL ?? '';
 
-  async function load() {
-    try {
-      contacts = await fetch('/api/contacts').then(r => r.json());
-    } catch { contacts = []; }
-    render();
+let contacts      = [];
+let editingId     = null;
+let activeCategory = '';
+
+/* ── DB helper ─────────────────────────────────────────────────────────────── */
+async function db(sql, params = []) {
+  if (!DB) return { rows: [] };
+  const res = await fetch(DB, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sql, params }),
+  });
+  if (!res.ok) throw new Error(`DB error ${res.status}`);
+  return res.json();
+}
+
+/* ── Data loading ──────────────────────────────────────────────────────────── */
+async function load() {
+  try {
+    const result = await db(
+      'SELECT id, display_name, email, phone, category, address, notes, created_by, created_at, updated_at FROM app_contacts__contacts ORDER BY display_name'
+    );
+    contacts = (result.rows ?? []).map(r => ({
+      id:          r.id,
+      displayName: r.display_name,
+      email:       r.email,
+      phone:       r.phone,
+      category:    r.category,
+      address:     r.address,
+      notes:       r.notes,
+      createdBy:   r.created_by,
+      createdAt:   r.created_at,
+      updatedAt:   r.updated_at,
+    }));
+  } catch {
+    contacts = [];
+  }
+  render();
+}
+
+/* ── Rendering ─────────────────────────────────────────────────────────────── */
+function render() {
+  const q        = document.getElementById('searchInput').value.trim();
+  const filtered = filterContacts(contacts, q, activeCategory);
+  const cats     = categories(contacts);
+
+  const fr = document.getElementById('filterRow');
+  fr.innerHTML = cats.length ? `
+    <button class="chip ${!activeCategory ? 'active' : ''}" onclick="setCategory('')">All</button>
+    ${cats.map(c => `<button class="chip ${activeCategory===c ? 'active' : ''}" onclick="setCategory('${c}')">${c}</button>`).join('')}
+  ` : '';
+
+  const el = document.getElementById('list');
+  if (!filtered.length) {
+    el.innerHTML = `<div class="empty">
+      <p>${contacts.length ? 'No contacts match your search.' : 'No contacts yet.'}</p>
+      ${!contacts.length ? '<button class="btn" onclick="openForm()">Add your first contact</button>' : ''}
+    </div>`;
+    return;
   }
 
-  function render() {
-    const q = document.getElementById('searchInput').value.trim();
-    const filtered = filterContacts(contacts, q, activeCategory);
-
-    // Category filter chips
-    const cats = categories(contacts);
-    const fr = document.getElementById('filterRow');
-    fr.innerHTML = cats.length ? `
-      <button class="chip ${!activeCategory ? 'active' : ''}" onclick="setCategory('')">All</button>
-      ${cats.map(c => `<button class="chip ${activeCategory===c ? 'active' : ''}" onclick="setCategory('${c}')">${c}</button>`).join('')}
-    ` : '';
-
-    const el = document.getElementById('list');
-    if (!filtered.length) {
-      el.innerHTML = `<div class="empty">
-        <p>${contacts.length ? 'No contacts match your search.' : 'No contacts yet.'}</p>
-        ${!contacts.length ? '<button class="btn" onclick="openForm()">Add your first contact</button>' : ''}
-      </div>`;
-      return;
-    }
-
-    el.innerHTML = filtered.map(c => `
-      <div class="contact-item" onclick="openForm('${c.id}')">
-        <div class="avatar">${(c.displayName[0]||'?').toUpperCase()}</div>
-        <div class="contact-info">
-          <div class="contact-name">
-            ${esc(c.displayName)}
-            ${c.category ? `<span class="contact-category">${esc(c.category)}</span>` : ''}
-          </div>
-          <div class="contact-meta">
-            ${c.phone ? `<span>📞 ${esc(c.phone)}</span>` : ''}
-            ${c.email ? `<span>✉️ ${esc(c.email)}</span>` : ''}
-            ${c.address ? `<span>📍 ${esc(c.address)}</span>` : ''}
-          </div>
-          ${c.notes ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:4px">${esc(c.notes)}</div>` : ''}
+  el.innerHTML = filtered.map(c => `
+    <div class="contact-item" onclick="openForm('${c.id}')">
+      <div class="avatar">${(c.displayName[0]||'?').toUpperCase()}</div>
+      <div class="contact-info">
+        <div class="contact-name">
+          ${esc(c.displayName)}
+          ${c.category ? `<span class="contact-category">${esc(c.category)}</span>` : ''}
         </div>
+        <div class="contact-meta">
+          ${c.phone   ? `<span>📞 ${esc(c.phone)}</span>`   : ''}
+          ${c.email   ? `<span>✉️ ${esc(c.email)}</span>`   : ''}
+          ${c.address ? `<span>📍 ${esc(c.address)}</span>` : ''}
+        </div>
+        ${c.notes ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:4px">${esc(c.notes)}</div>` : ''}
       </div>
-    `).join('');
-  }
+    </div>
+  `).join('');
+}
 
-  function setCategory(cat) {
-    activeCategory = cat;
-    render();
-  }
+function setCategory(cat) {
+  activeCategory = cat;
+  render();
+}
 
-  function openForm(id) {
-    editingId = id || null;
-    const contact = id ? contacts.find(c => c.id === id) : null;
-    document.getElementById('formTitle').textContent = contact ? 'Edit Contact' : 'Add Contact';
-    document.getElementById('fName').value    = contact?.displayName || '';
-    document.getElementById('fPhone').value   = contact?.phone || '';
-    document.getElementById('fEmail').value   = contact?.email || '';
-    document.getElementById('fCategory').value= contact?.category || '';
-    document.getElementById('fAddress').value = contact?.address || '';
-    document.getElementById('fNotes').value   = contact?.notes || '';
-    document.getElementById('deleteBtn').style.display = contact ? '' : 'none';
-    document.getElementById('formOverlay').style.display = 'flex';
-    document.getElementById('fName').focus();
-  }
+/* ── Form ──────────────────────────────────────────────────────────────────── */
+function openForm(id) {
+  editingId = id || null;
+  const c = id ? contacts.find(x => x.id === id) : null;
+  document.getElementById('formTitle').textContent = c ? 'Edit Contact' : 'Add Contact';
+  document.getElementById('fName').value     = c?.displayName || '';
+  document.getElementById('fPhone').value    = c?.phone || '';
+  document.getElementById('fEmail').value    = c?.email || '';
+  document.getElementById('fCategory').value = c?.category || '';
+  document.getElementById('fAddress').value  = c?.address || '';
+  document.getElementById('fNotes').value    = c?.notes || '';
+  document.getElementById('deleteBtn').style.display = c ? '' : 'none';
+  document.getElementById('formOverlay').style.display = 'flex';
+  document.getElementById('fName').focus();
+}
 
-  function closeForm() {
-    document.getElementById('formOverlay').style.display = 'none';
-    editingId = null;
-  }
+function closeForm() {
+  document.getElementById('formOverlay').style.display = 'none';
+  editingId = null;
+}
 
-  async function saveContact() {
-    const body = {
-      displayName: document.getElementById('fName').value.trim(),
-      phone:       document.getElementById('fPhone').value.trim() || null,
-      email:       document.getElementById('fEmail').value.trim() || null,
-      category:    document.getElementById('fCategory').value || null,
-      address:     document.getElementById('fAddress').value.trim() || null,
-      notes:       document.getElementById('fNotes').value.trim() || null,
-    };
-    if (!body.displayName) { alert('Name is required'); return; }
+async function saveContact() {
+  const displayName = document.getElementById('fName').value.trim();
+  const phone       = document.getElementById('fPhone').value.trim() || null;
+  const email       = document.getElementById('fEmail').value.trim() || null;
+  const category    = document.getElementById('fCategory').value || null;
+  const address     = document.getElementById('fAddress').value.trim() || null;
+  const notes       = document.getElementById('fNotes').value.trim() || null;
+  if (!displayName) { alert('Name is required'); return; }
 
-    const url    = editingId ? `/api/contacts/${editingId}` : '/api/contacts';
-    const method = editingId ? 'PATCH' : 'POST';
-    const prevContacts = contacts;
-    let tempId = null;
+  const now = new Date().toISOString();
+  const prevContacts = contacts;
 
-    if (editingId) {
-      contacts = contacts.map(c => c.id === editingId ? { ...c, ...body } : c);
-    } else {
-      tempId = `__pending_${Date.now()}`;
-      contacts = [...contacts, { id: tempId, ...body }];
-    }
+  if (editingId) {
+    contacts = contacts.map(c => c.id === editingId
+      ? { ...c, displayName, phone, email, category, address, notes, updatedAt: now }
+      : c);
     closeForm();
     render();
-
     try {
-      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      if (!res.ok) throw new Error('Failed');
-      if (tempId !== null) {
-        const created = await res.json();
-        contacts = contacts.map(c => c.id === tempId ? created : c);
-        render();
-      }
+      await db(
+        'UPDATE app_contacts__contacts SET display_name=?, phone=?, email=?, category=?, address=?, notes=?, updated_at=? WHERE id=?',
+        [displayName, phone, email, category, address, notes, now, editingId]
+      );
+    } catch {
+      contacts = prevContacts;
+      render();
+    }
+  } else {
+    const id        = crypto.randomUUID();
+    const createdBy = window.__CURRENT_MEMBER?.id ?? null;
+    const tempContact = { id, displayName, phone, email, category, address, notes, createdBy, createdAt: now, updatedAt: now };
+    contacts = [...contacts, tempContact].sort((a, b) => a.displayName.localeCompare(b.displayName));
+    closeForm();
+    render();
+    try {
+      await db(
+        'INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, notes, created_by, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)',
+        [id, displayName, email, phone, category, address, notes, createdBy, now, now]
+      );
     } catch {
       contacts = prevContacts;
       render();
     }
   }
+}
 
-  async function deleteContact() {
-    if (!editingId || !await hubConfirm({ message: "Delete this contact?", confirmLabel: "Delete", destructive: true })) return;
-    const prevContacts = contacts;
-    const id = editingId;
-    contacts = contacts.filter(c => c.id !== id);
-    closeForm();
+async function deleteContact() {
+  if (!editingId || !await hubConfirm({ message: 'Delete this contact?', confirmLabel: 'Delete', destructive: true })) return;
+  const id = editingId;
+  const prevContacts = contacts;
+  contacts = contacts.filter(c => c.id !== id);
+  closeForm();
+  render();
+  try {
+    await db('DELETE FROM app_contacts__contacts WHERE id=?', [id]);
+  } catch {
+    contacts = prevContacts;
     render();
+  }
+}
 
-    try {
-      const res = await fetch(`/api/contacts/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed');
-    } catch {
-      contacts = prevContacts;
-      render();
+/* ── Import ────────────────────────────────────────────────────────────────── */
+function openImport() {
+  document.getElementById('importStatus').textContent = '';
+  document.getElementById('importOverlay').style.display = 'flex';
+}
+function closeImport() {
+  document.getElementById('importOverlay').style.display = 'none';
+  document.getElementById('vcfFile').value = '';
+}
+function onDrag(e, over) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.toggle('drag', over);
+}
+function onDrop(e) {
+  e.preventDefault();
+  onDrag(e, false);
+  handleFile(e.dataTransfer.files[0]);
+}
+
+async function handleFile(file) {
+  if (!file) return;
+  const status = document.getElementById('importStatus');
+  if (file.size > 1024 * 1024) { status.textContent = 'File too large (max 1 MB)'; return; }
+  status.textContent = 'Importing…';
+
+  try {
+    const text   = await file.text();
+    const parsed = parseVCards(text);
+    if (!parsed.length) { status.textContent = 'No valid contacts found in file.'; return; }
+
+    const now       = new Date().toISOString();
+    const createdBy = window.__CURRENT_MEMBER?.id ?? null;
+
+    const newContacts = parsed.map(p => ({
+      id:          crypto.randomUUID(),
+      displayName: p.displayName,
+      email:       p.email ?? null,
+      phone:       p.phone ?? null,
+      category:    p.category ?? null,
+      address:     p.address ?? null,
+      notes:       p.notes ?? null,
+      createdBy,
+      createdAt:   now,
+      updatedAt:   now,
+    }));
+
+    for (const c of newContacts) {
+      await db(
+        'INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, notes, created_by, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)',
+        [c.id, c.displayName, c.email, c.phone, c.category, c.address, c.notes, c.createdBy, c.createdAt, c.updatedAt]
+      );
     }
-  }
 
-  // ── Import ──────────────────────────────────────────────────────────────────
+    contacts = [...contacts, ...newContacts].sort((a, b) => a.displayName.localeCompare(b.displayName));
+    status.textContent = `✓ Imported ${newContacts.length} contact${newContacts.length !== 1 ? 's' : ''}`;
+    render();
+  } catch {
+    status.textContent = 'Import failed — please try again';
+  }
+}
 
-  function openImport() {
-    document.getElementById('importStatus').textContent = '';
-    document.getElementById('importOverlay').style.display = 'flex';
-  }
-  function closeImport() {
-    document.getElementById('importOverlay').style.display = 'none';
-    document.getElementById('vcfFile').value = '';
-  }
-  function onDrag(e, over) {
-    e.preventDefault();
-    document.getElementById('dropZone').classList.toggle('drag', over);
-  }
-  function onDrop(e) {
-    e.preventDefault();
-    onDrag(e, false);
-    handleFile(e.dataTransfer.files[0]);
-  }
+load();
 
-  async function handleFile(file) {
-    if (!file) return;
-    const status = document.getElementById('importStatus');
-    status.textContent = 'Importing…';
-    const form = new FormData();
-    form.append('file', file);
-    try {
-      const res  = await fetch('/api/contacts/import', { method: 'POST', body: form });
-      const data = await res.json();
-      if (res.ok) {
-        status.textContent = `✓ Imported ${data.imported} contact${data.imported !== 1 ? 's' : ''}`;
-        load();
-      } else {
-        status.textContent = `Error: ${data.error}`;
-      }
-    } catch {
-      status.textContent = 'Upload failed — please try again';
-    }
-  }
-
-  load();
-
-  window.openForm     = openForm;
-  window.closeForm    = closeForm;
-  window.saveContact  = saveContact;
-  window.deleteContact = deleteContact;
-  window.setCategory  = setCategory;
-  window.openImport   = openImport;
-  window.closeImport  = closeImport;
-  window.onDrag       = onDrag;
-  window.onDrop       = onDrop;
-  window.handleFile   = handleFile;
+window.openForm      = openForm;
+window.closeForm     = closeForm;
+window.saveContact   = saveContact;
+window.deleteContact = deleteContact;
+window.setCategory   = setCategory;
+window.openImport    = openImport;
+window.closeImport   = closeImport;
+window.onDrag        = onDrag;
+window.onDrop        = onDrop;
+window.handleFile    = handleFile;
 </script>
 </body>
 </html>
