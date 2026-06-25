@@ -191,10 +191,16 @@ function render() {
   const cats     = categories(contacts);
 
   const fr = document.getElementById('filterRow');
+  // Category strings can be attacker-controlled (the .vcf import sets `category`
+  // from the vCard CATEGORIES field, bypassing the fixed <select>). Escape them
+  // and bind via data-* + addEventListener rather than interpolating into an
+  // inline onclick — HTML escaping alone is not safe inside a JS attribute.
   fr.innerHTML = cats.length ? `
-    <button class="chip ${!activeCategory ? 'active' : ''}" onclick="setCategory('')">All</button>
-    ${cats.map(c => `<button class="chip ${activeCategory===c ? 'active' : ''}" onclick="setCategory('${c}')">${c}</button>`).join('')}
+    <button class="chip ${!activeCategory ? 'active' : ''}" data-cat="">All</button>
+    ${cats.map(c => `<button class="chip ${activeCategory===c ? 'active' : ''}" data-cat="${esc(c)}">${esc(c)}</button>`).join('')}
   ` : '';
+  fr.querySelectorAll('.chip[data-cat]').forEach(btn =>
+    btn.addEventListener('click', () => setCategory(btn.dataset.cat)));
 
   const el = document.getElementById('list');
   if (!filtered.length) {
@@ -207,7 +213,7 @@ function render() {
 
   el.innerHTML = filtered.map(c => `
     <div class="contact-item" onclick="openForm('${c.id}')">
-      <div class="avatar">${(c.displayName[0]||'?').toUpperCase()}</div>
+      <div class="avatar">${esc((c.displayName[0]||'?').toUpperCase())}</div>
       <div class="contact-info">
         <div class="contact-name">
           ${esc(c.displayName)}
