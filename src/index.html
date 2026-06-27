@@ -139,7 +139,7 @@
 </div>
 
 <script type="module">
-import { hubConfirm, esc } from "/hub-sdk.js";
+import { hubAlert, hubConfirm, esc } from "/hub-sdk.js";
 import { categories, filterContacts, parseVCards } from "./logic.js";
 
 const DB = window.__DB_URL ?? '';
@@ -263,7 +263,7 @@ async function saveContact() {
   const category    = document.getElementById('fCategory').value || null;
   const address     = document.getElementById('fAddress').value.trim() || null;
   const notes       = document.getElementById('fNotes').value.trim() || null;
-  if (!displayName) { alert('Name is required'); return; }
+  if (!displayName) { hubAlert('Name is required'); return; }
 
   const now = new Date().toISOString();
   const prevContacts = contacts;
