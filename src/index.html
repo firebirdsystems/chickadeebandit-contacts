@@ -203,6 +203,13 @@ function render() {
     btn.addEventListener('click', () => setCategory(btn.dataset.cat)));
 
   const el = document.getElementById('list');
+  // Contact ids come from the DB and are attacker-controllable via raw /api/db,
+  // so bind clicks via a data-* attribute + listener rather than interpolating the
+  // id into an inline onclick JS string (an injection vector).
+  el.onclick = (e) => {
+    const item = e.target.closest('.contact-item[data-id]');
+    if (item) openForm(item.dataset.id);
+  };
   if (!filtered.length) {
     el.innerHTML = `<div class="empty">
       <p>${contacts.length ? 'No contacts match your search.' : 'No contacts yet.'}</p>
@@ -212,7 +219,7 @@ function render() {
   }
 
   el.innerHTML = filtered.map(c => `
-    <div class="contact-item" onclick="openForm('${c.id}')">
+    <div class="contact-item" data-id="${esc(c.id)}">
       <div class="avatar">${esc((c.displayName[0]||'?').toUpperCase())}</div>
       <div class="contact-info">
         <div class="contact-name">
