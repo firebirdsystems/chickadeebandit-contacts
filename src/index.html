@@ -143,10 +143,30 @@ import { hubAlert, hubConfirm, esc } from "/hub-sdk.js";
 import { categories, filterContacts, parseVCards } from "./logic.js";
 
 const DB = window.__DB_URL ?? '';
+const STORE = window.__STORE_URL ?? '';
 
 let contacts      = [];
 let editingId     = null;
 let activeCategory = '';
+
+/* ── Cross-app export ──────────────────────────────────────────────────────────
+ * Publish a derived name/email list to the "contact_emails" store key declared
+ * in exports. Other apps (e.g. the Check-In Switch) read it via the context
+ * endpoint to prefill an external-contact picker. The KV key is not derived from
+ * the D1 table automatically — we write it here after every change. */
+async function publishEmailExport() {
+  if (!STORE) return;
+  const list = contacts
+    .filter(c => c.email)
+    .map(c => ({ name: (c.displayName || '').trim(), email: String(c.email).trim() }));
+  try {
+    await fetch(STORE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: 'contact_emails', value: JSON.stringify(list) }),
+    });
+  } catch { /* best-effort; the export is a convenience, not core */ }
+}
 
 /* ── DB helper ─────────────────────────────────────────────────────────────── */
 async function db(sql, params = []) {
@@ -182,6 +202,7 @@ async function load() {
     contacts = [];
   }
   render();
+  publishEmailExport();
 }
 
 /* ── Rendering ─────────────────────────────────────────────────────────────── */
@@ -286,6 +307,7 @@ async function saveContact() {
         'UPDATE app_contacts__contacts SET display_name=?, phone=?, email=?, category=?, address=?, notes=?, updated_at=? WHERE id=?',
         [displayName, phone, email, category, address, notes, now, editingId]
       );
+      publishEmailExport();
     } catch {
       contacts = prevContacts;
       render();
@@ -302,6 +324,7 @@ async function saveContact() {
         'INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, notes, created_by, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)',
         [id, displayName, email, phone, category, address, notes, createdBy, now, now]
       );
+      publishEmailExport();
     } catch {
       contacts = prevContacts;
       render();
@@ -318,6 +341,7 @@ async function deleteContact() {
   render();
   try {
     await db('DELETE FROM app_contacts__contacts WHERE id=?', [id]);
+    publishEmailExport();
   } catch {
     contacts = prevContacts;
     render();
@@ -380,6 +404,7 @@ async function handleFile(file) {
     contacts = [...contacts, ...newContacts].sort((a, b) => a.displayName.localeCompare(b.displayName));
     status.textContent = `✓ Imported ${newContacts.length} contact${newContacts.length !== 1 ? 's' : ''}`;
     render();
+    publishEmailExport();
   } catch {
     status.textContent = 'Import failed — please try again';
   }
