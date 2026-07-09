@@ -1,5 +1,39 @@
 import { describe, it, expect } from "vitest";
-import { parseVCards } from "../src/logic.js";
+import { parseVCards, normalizeVcardDate } from "../src/logic.js";
+
+describe("normalizeVcardDate", () => {
+  it("passes through YYYY-MM-DD", () => expect(normalizeVcardDate("1970-03-31")).toBe("1970-03-31"));
+  it("hyphenates compact YYYYMMDD", () => expect(normalizeVcardDate("19700331")).toBe("1970-03-31"));
+  it("normalizes year-less --MMDD and --MM-DD", () => {
+    expect(normalizeVcardDate("--0331")).toBe("--03-31");
+    expect(normalizeVcardDate("--03-31")).toBe("--03-31");
+  });
+  it("drops a time component", () => expect(normalizeVcardDate("1970-03-31T00:00:00Z")).toBe("1970-03-31"));
+  it("returns undefined for empty or unparseable values", () => {
+    expect(normalizeVcardDate("")).toBeUndefined();
+    expect(normalizeVcardDate(undefined)).toBeUndefined();
+    expect(normalizeVcardDate("sometime")).toBeUndefined();
+  });
+});
+
+describe("parseVCards — dates", () => {
+  it("extracts BDAY and ANNIVERSARY", () => {
+    const vcf = `BEGIN:VCARD\nFN:Sue\nBDAY:1958-09-14\nANNIVERSARY:19850620\nEND:VCARD`;
+    const [c] = parseVCards(vcf);
+    expect(c.birthday).toBe("1958-09-14");
+    expect(c.anniversary).toBe("1985-06-20");
+  });
+  it("handles a BDAY with parameters and a year-less value", () => {
+    const vcf = `BEGIN:VCARD\nFN:Sue\nBDAY;VALUE=date:--0914\nEND:VCARD`;
+    const [c] = parseVCards(vcf);
+    expect(c.birthday).toBe("--09-14");
+  });
+  it("leaves dates undefined when absent", () => {
+    const [c] = parseVCards(`BEGIN:VCARD\nFN:Sue\nEND:VCARD`);
+    expect(c.birthday).toBeUndefined();
+    expect(c.anniversary).toBeUndefined();
+  });
+});
 
 describe("parseVCards", () => {
   it("parses a minimal vCard with FN", () => {

@@ -1,8 +1,8 @@
 {
   "id": "contacts",
   "name": "Contacts",
-  "version": "1.0.0",
-  "description": "Shared household address book — doctors, schools, neighbors, emergency contacts. Add manually or import from a .vcf file.",
+  "version": "1.1.0",
+  "description": "Shared household address book — doctors, schools, neighbors, emergency contacts. Track birthdays and anniversaries too. Add manually or import from a .vcf file.",
   "entrypoint": "index.html",
   "runtime": "static",
   "category": "general",
@@ -16,7 +16,8 @@
     "requires_approval": false
   },
   "storage": "db",
-  "exports": ["contact_emails"],
+  "db_plaintext_columns": ["birthday", "anniversary"],
+  "exports": ["contact_emails", "contact_dates"],
   "nav": { "label": "Contacts" },
   "resource_limits": { "max_db_bytes": 10485760 },
   "icon": "👥"

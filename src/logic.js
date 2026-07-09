@@ -22,7 +22,7 @@ export function filterContacts(contacts, query, activeCategory) {
  * Parse a .vcf file containing one or more vCards.
  * Handles vCard 2.1, 3.0, and 4.0.
  * @param {string} vcfText
- * @returns {{ displayName: string; email?: string; phone?: string; address?: string; notes?: string; category?: string }[]}
+ * @returns {{ displayName: string; email?: string; phone?: string; address?: string; notes?: string; category?: string; birthday?: string; anniversary?: string }[]}
  */
 export function parseVCards(vcfText) {
   const results = [];
@@ -69,8 +69,30 @@ export function parseVCards(vcfText) {
     const cats     = get('CATEGORIES');
     const category = cats ? cats.split(',')[0].trim() : undefined;
 
-    results.push({ displayName, email, phone, address, notes, category });
+    const birthday    = normalizeVcardDate(get('BDAY'));
+    const anniversary = normalizeVcardDate(get('ANNIVERSARY'));
+
+    results.push({ displayName, email, phone, address, notes, category, birthday, anniversary });
   }
 
   return results;
+}
+
+/**
+ * Normalize a vCard date value (BDAY/ANNIVERSARY) to a canonical string.
+ * Handles "YYYY-MM-DD", "YYYYMMDD", "--MMDD" / "--MM-DD" (year omitted), and
+ * date-times ("YYYY-MM-DDTHH:MM:SSZ" → date part). Returns undefined when the
+ * value carries no usable month/day. vCard 4.0 allows a partial date with the
+ * year elided; that is preserved as "--MM-DD".
+ * @param {string|null|undefined} raw
+ * @returns {string|undefined}
+ */
+export function normalizeVcardDate(raw) {
+  if (!raw) return undefined;
+  const s = String(raw).trim().split(/[T ]/)[0]; // drop any time component
+  let m;
+  if ((m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/)))  return `${m[1]}-${m[2]}-${m[3]}`;
+  if ((m = s.match(/^(\d{4})(\d{2})(\d{2})$/)))    return `${m[1]}-${m[2]}-${m[3]}`;
+  if ((m = s.match(/^--(\d{2})-?(\d{2})$/)))        return `--${m[1]}-${m[2]}`;
+  return undefined;
 }

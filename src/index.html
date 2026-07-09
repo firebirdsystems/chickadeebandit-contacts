@@ -105,6 +105,8 @@
       </select>
     </div>
     <div class="field"><label>Address</label><input id="fAddress" type="text" placeholder="123 Main St, City" /></div>
+    <div class="field"><label>Birthday</label><input id="fBirthday" type="date" /></div>
+    <div class="field"><label>Anniversary</label><input id="fAnniversary" type="date" /></div>
     <div class="field"><label>Notes</label><textarea id="fNotes" placeholder="Any useful notes…"></textarea></div>
     <div class="modal-actions">
       <div class="modal-left">
@@ -159,13 +161,39 @@ async function publishEmailExport() {
   const list = contacts
     .filter(c => c.email)
     .map(c => ({ name: (c.displayName || '').trim(), email: String(c.email).trim() }));
+  await writeStore('contact_emails', list);
+}
+
+/* Publish a derived name/birthday/anniversary list to the "contact_dates" store
+ * key. The Occasions app reads it to suggest dates you can add in one tap. Only
+ * contacts that actually carry a date are included. */
+async function publishDatesExport() {
+  if (!STORE) return;
+  const list = contacts
+    .filter(c => (c.birthday || '').trim() || (c.anniversary || '').trim())
+    .map(c => ({
+      id: c.id,
+      name: (c.displayName || '').trim(),
+      birthday: (c.birthday || '').trim(),
+      anniversary: (c.anniversary || '').trim(),
+    }));
+  await writeStore('contact_dates', list);
+}
+
+async function writeStore(key, value) {
   try {
     await fetch(STORE, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: 'contact_emails', value: JSON.stringify(list) }),
+      body: JSON.stringify({ key, value: JSON.stringify(value) }),
     });
-  } catch { /* best-effort; the export is a convenience, not core */ }
+  } catch { /* best-effort; exports are a convenience, not core */ }
+}
+
+/* Republish both cross-app exports after any change. */
+function publishExports() {
+  publishEmailExport();
+  publishDatesExport();
 }
 
 /* ── DB helper ─────────────────────────────────────────────────────────────── */
@@ -184,7 +212,7 @@ async function db(sql, params = []) {
 async function load() {
   try {
     const result = await db(
-      'SELECT id, display_name, email, phone, category, address, notes, created_by, created_at, updated_at FROM app_contacts__contacts ORDER BY display_name'
+      'SELECT id, display_name, email, phone, category, address, notes, birthday, anniversary, created_by, created_at, updated_at FROM app_contacts__contacts ORDER BY display_name'
     );
     contacts = (result.rows ?? []).map(r => ({
       id:          r.id,
@@ -194,6 +222,8 @@ async function load() {
       category:    r.category,
       address:     r.address,
       notes:       r.notes,
+      birthday:    r.birthday,
+      anniversary: r.anniversary,
       createdBy:   r.created_by,
       createdAt:   r.created_at,
       updatedAt:   r.updated_at,
@@ -202,7 +232,7 @@ async function load() {
     contacts = [];
   }
   render();
-  publishEmailExport();
+  publishExports();
 }
 
 /* ── Rendering ─────────────────────────────────────────────────────────────── */
@@ -251,6 +281,7 @@ function render() {
           ${c.phone   ? `<span>📞 ${esc(c.phone)}</span>`   : ''}
           ${c.email   ? `<span>✉️ ${esc(c.email)}</span>`   : ''}
           ${c.address ? `<span>📍 ${esc(c.address)}</span>` : ''}
+          ${c.birthday ? `<span>🎂 ${esc(fmtDateLabel(c.birthday))}</span>` : ''}
         </div>
         ${c.notes ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:4px">${esc(c.notes)}</div>` : ''}
       </div>
@@ -273,6 +304,10 @@ function openForm(id) {
   document.getElementById('fEmail').value    = c?.email || '';
   document.getElementById('fCategory').value = c?.category || '';
   document.getElementById('fAddress').value  = c?.address || '';
+  // <input type="date"> only accepts YYYY-MM-DD; a year-less imported value
+  // ("--MM-DD") can't be shown, so leave the picker empty in that case.
+  document.getElementById('fBirthday').value    = isoDate(c?.birthday);
+  document.getElementById('fAnniversary').value = isoDate(c?.anniversary);
   document.getElementById('fNotes').value    = c?.notes || '';
   document.getElementById('deleteBtn').style.display = c ? '' : 'none';
   document.getElementById('formOverlay').style.display = 'flex';
@@ -284,12 +319,36 @@ function closeForm() {
   editingId = null;
 }
 
+/* Only a full YYYY-MM-DD value can populate <input type="date">. */
+function isoDate(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test((value || '').trim()) ? value.trim() : '';
+}
+
+/* Format a stored date string ("YYYY-MM-DD" or year-less "--MM-DD") as a short
+ * "Mon D" label. Falls back to the raw string if it doesn't match. */
+function fmtDateLabel(value) {
+  const s = (value || '').trim();
+  let m;
+  if ((m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/)) || (m = s.match(/^--(\d{2})-?(\d{2})$/))) {
+    const hasYear = m[0].charAt(0) !== '-';
+    const month = Number(hasYear ? m[2] : m[1]);
+    const day   = Number(hasYear ? m[3] : m[2]);
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      const d = new Date(2000, month - 1, day, 12);
+      return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(d);
+    }
+  }
+  return s;
+}
+
 async function saveContact() {
   const displayName = document.getElementById('fName').value.trim();
   const phone       = document.getElementById('fPhone').value.trim() || null;
   const email       = document.getElementById('fEmail').value.trim() || null;
   const category    = document.getElementById('fCategory').value || null;
   const address     = document.getElementById('fAddress').value.trim() || null;
+  const birthday    = document.getElementById('fBirthday').value || '';
+  const anniversary = document.getElementById('fAnniversary').value || '';
   const notes       = document.getElementById('fNotes').value.trim() || null;
   if (!displayName) { hubAlert('Name is required'); return; }
 
@@ -298,16 +357,16 @@ async function saveContact() {
 
   if (editingId) {
     contacts = contacts.map(c => c.id === editingId
-      ? { ...c, displayName, phone, email, category, address, notes, updatedAt: now }
+      ? { ...c, displayName, phone, email, category, address, birthday, anniversary, notes, updatedAt: now }
       : c);
     closeForm();
     render();
     try {
       await db(
-        'UPDATE app_contacts__contacts SET display_name=?, phone=?, email=?, category=?, address=?, notes=?, updated_at=? WHERE id=?',
-        [displayName, phone, email, category, address, notes, now, editingId]
+        'UPDATE app_contacts__contacts SET display_name=?, phone=?, email=?, category=?, address=?, notes=?, birthday=?, anniversary=?, updated_at=? WHERE id=?',
+        [displayName, phone, email, category, address, notes, birthday, anniversary, now, editingId]
       );
-      publishEmailExport();
+      publishExports();
     } catch {
       contacts = prevContacts;
       render();
@@ -315,16 +374,16 @@ async function saveContact() {
   } else {
     const id        = crypto.randomUUID();
     const createdBy = window.__CURRENT_MEMBER?.id ?? null;
-    const tempContact = { id, displayName, phone, email, category, address, notes, createdBy, createdAt: now, updatedAt: now };
+    const tempContact = { id, displayName, phone, email, category, address, birthday, anniversary, notes, createdBy, createdAt: now, updatedAt: now };
     contacts = [...contacts, tempContact].sort((a, b) => a.displayName.localeCompare(b.displayName));
     closeForm();
     render();
     try {
       await db(
-        'INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, notes, created_by, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)',
-        [id, displayName, email, phone, category, address, notes, createdBy, now, now]
+        'INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, notes, birthday, anniversary, created_by, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
+        [id, displayName, email, phone, category, address, notes, birthday, anniversary, createdBy, now, now]
       );
-      publishEmailExport();
+      publishExports();
     } catch {
       contacts = prevContacts;
       render();
@@ -341,7 +400,7 @@ async function deleteContact() {
   render();
   try {
     await db('DELETE FROM app_contacts__contacts WHERE id=?', [id]);
-    publishEmailExport();
+    publishExports();
   } catch {
     contacts = prevContacts;
     render();
@@ -389,6 +448,8 @@ async function handleFile(file) {
       category:    p.category ?? null,
       address:     p.address ?? null,
       notes:       p.notes ?? null,
+      birthday:    p.birthday ?? '',
+      anniversary: p.anniversary ?? '',
       createdBy,
       createdAt:   now,
       updatedAt:   now,
@@ -396,15 +457,15 @@ async function handleFile(file) {
 
     for (const c of newContacts) {
       await db(
-        'INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, notes, created_by, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)',
-        [c.id, c.displayName, c.email, c.phone, c.category, c.address, c.notes, c.createdBy, c.createdAt, c.updatedAt]
+        'INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, notes, birthday, anniversary, created_by, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
+        [c.id, c.displayName, c.email, c.phone, c.category, c.address, c.notes, c.birthday, c.anniversary, c.createdBy, c.createdAt, c.updatedAt]
       );
     }
 
     contacts = [...contacts, ...newContacts].sort((a, b) => a.displayName.localeCompare(b.displayName));
     status.textContent = `✓ Imported ${newContacts.length} contact${newContacts.length !== 1 ? 's' : ''}`;
     render();
-    publishEmailExport();
+    publishExports();
   } catch {
     status.textContent = 'Import failed — please try again';
   }
