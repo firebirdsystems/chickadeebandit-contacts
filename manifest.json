@@ -1,5 +1,6 @@
 {
   "id": "contacts",
+  "contexts": ["household", "shared_space"],
   "name": "Contacts",
   "version": "1.1.0",
   "description": "Shared household address book — doctors, schools, neighbors, emergency contacts. Track birthdays and anniversaries too. Add manually or import from a .vcf file.",
