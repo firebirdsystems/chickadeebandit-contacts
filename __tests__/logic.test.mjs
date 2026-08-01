@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { categories, filterContacts } from "../src/logic.js";
+import { categories, filterContacts, searchableFields } from "../src/logic.js";
 
 function contact(overrides = {}) {
   return {
@@ -45,52 +45,37 @@ describe("filterContacts", () => {
     contact({ id: "c3", displayName: "Chris Walker", email: "chris@company.com",  category: "Work" }),
   ];
 
-  it("returns all contacts when query and category are empty", () => {
-    const result = filterContacts(contacts, "", "");
-    expect(result).toHaveLength(3);
+  it("returns every contact when no category is active", () => {
+    expect(filterContacts(contacts, "")).toHaveLength(3);
   });
 
   it("sorts by displayName alphabetically", () => {
-    const result = filterContacts(contacts, "", "");
-    expect(result.map(c => c.id)).toEqual(["c1", "c2", "c3"]);
+    expect(filterContacts(contacts, "").map(c => c.id)).toEqual(["c1", "c2", "c3"]);
   });
 
   it("filters by category", () => {
-    const result = filterContacts(contacts, "", "Work");
-    expect(result.map(c => c.id)).toEqual(["c1", "c3"]);
-  });
-
-  it("filters by search query on displayName", () => {
-    const result = filterContacts(contacts, "beth", "");
-    expect(result).toHaveLength(1);
-    expect(result[0].id).toBe("c2");
-  });
-
-  it("filters by search query on email", () => {
-    const result = filterContacts(contacts, "company.com", "");
-    expect(result).toHaveLength(1);
-    expect(result[0].id).toBe("c3");
-  });
-
-  it("filters by search query on phone", () => {
-    const result = filterContacts(contacts, "555", "");
-    expect(result).toHaveLength(1);
-    expect(result[0].id).toBe("c2");
-  });
-
-  it("applies both category and query filters", () => {
-    const result = filterContacts(contacts, "alex", "Work");
-    expect(result).toHaveLength(1);
-    expect(result[0].id).toBe("c1");
-  });
-
-  it("returns empty array when nothing matches", () => {
-    expect(filterContacts(contacts, "xyz", "")).toHaveLength(0);
+    expect(filterContacts(contacts, "Work").map(c => c.id)).toEqual(["c1", "c3"]);
   });
 
   it("does not mutate the input array", () => {
     const copy = [...contacts];
-    filterContacts(contacts, "alex", "");
+    filterContacts(contacts, "");
     expect(contacts).toEqual(copy);
+  });
+});
+
+// ── searchableFields ──────────────────────────────────────────────────────────
+
+describe("searchableFields", () => {
+  it("reaches past the name — email, phone, address and notes all count", () => {
+    const c = contact({
+      displayName: "Beth Jones", email: "beth@company.com", phone: "555-1234",
+      address: "12 Elm St", notes: "school run carpool",
+    });
+    const fields = searchableFields(c);
+    expect(fields).toContain("beth@company.com");
+    expect(fields).toContain("555-1234");
+    expect(fields).toContain("12 Elm St");
+    expect(fields).toContain("school run carpool");
   });
 });

@@ -141,8 +141,8 @@
 </div>
 
 <script type="module">
-import { hubAlert, hubConfirm, esc } from "/hub-sdk.js";
-import { categories, filterContacts, parseVCards } from "./logic.js";
+import { hubAlert, hubConfirm, esc, searchMatch } from "/hub-sdk.js";
+import { categories, filterContacts, parseVCards, searchableFields } from "./logic.js";
 
 const DB = window.__DB_URL ?? '';
 const STORE = window.__STORE_URL ?? '';
@@ -260,7 +260,8 @@ async function load() {
 /* ── Rendering ─────────────────────────────────────────────────────────────── */
 function render() {
   const q        = document.getElementById('searchInput').value.trim();
-  const filtered = filterContacts(contacts, q, activeCategory);
+  const inCategory = filterContacts(contacts, activeCategory);
+  const filtered = q ? inCategory.filter(c => searchMatch(q, searchableFields(c))) : inCategory;
   const cats     = categories(contacts);
 
   const fr = document.getElementById('filterRow');
