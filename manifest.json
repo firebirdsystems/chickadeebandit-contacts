@@ -19,6 +19,17 @@
   "storage": "db",
   "db_plaintext_columns": ["birthday", "anniversary"],
   "exports": ["contact_emails", "contact_dates"],
+  "row_policies": {
+    "contacts": {
+      "kind": "owner_or_visibility",
+      "member_column": "created_by",
+      "visibility_column": "visibility",
+      "everyone_values": ["everyone"]
+    }
+  },
+  "member_references": {
+    "contacts": { "column": "created_by", "on_removed": "keep" }
+  },
   "nav": { "label": "Contacts" },
   "resource_limits": { "max_db_bytes": 10485760 },
   "icon": "👥"

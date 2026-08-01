@@ -1,0 +1,16 @@
+-- Governance-only visibility column for the `contacts` row policy
+-- (owner_or_visibility). Kept plaintext by the `visibility` column-name
+-- convention so the hub can compare it in SQL.
+--
+-- This table shipped with NO row_policies entry at all, which means ungoverned:
+-- every member with access to the app — guests included — could edit or delete
+-- any contact in the household's address book, and one bad tap took the lot.
+-- Reads were never the problem (a shared directory is the point), so every row
+-- defaults to 'everyone' and the app's behaviour is unchanged for reading.
+--
+-- What changes is writes. owner_or_visibility with neither write_owner_only nor
+-- write_visibility_scoped gives exactly the rule this app wants: adults may
+-- edit or delete any contact (they moderate), while a non-adult may only touch
+-- rows they created. The hub also forces `created_by` on INSERT, so ownership
+-- is recorded by the platform rather than trusted from the client.
+ALTER TABLE app_contacts__contacts ADD COLUMN visibility TEXT NOT NULL DEFAULT 'everyone';

@@ -39,3 +39,26 @@ describe("manifest.json", () => {
     expect(Array.isArray(manifest.data_access.writes)).toBe(true);
   });
 });
+
+// The address book shipped with NO row_policies entry — ungoverned, so any
+// member with app access (guests included) could delete every contact in the
+// household. Reads stay open, which is the point of a shared directory; what
+// the policy adds is that a non-adult may only change rows they created, while
+// adults still moderate the whole book. Neither write_owner_only nor
+// write_visibility_scoped may be set: the first would strip adults of that
+// moderation, the second would hand every reader write access again.
+describe("row policy", () => {
+  it("governs writes without narrowing reads", () => {
+    expect(manifest.row_policies.contacts).toEqual({
+      kind: "owner_or_visibility",
+      member_column: "created_by",
+      visibility_column: "visibility",
+      everyone_values: ["everyone"],
+    });
+  });
+
+  it("defaults every row to household-readable", () => {
+    const sql = readFileSync(join(__dirname, "../migrations/003_visibility.sql"), "utf-8");
+    expect(sql).toMatch(/ADD COLUMN visibility TEXT NOT NULL DEFAULT 'everyone'/);
+  });
+});

@@ -204,15 +204,37 @@ async function db(sql, params = []) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ sql, params }),
   });
-  if (!res.ok) throw new Error(`DB error ${res.status}`);
-  return res.json();
+  const body = await res.json().catch(() => ({}));
+  // A refused write comes back as a JSON body with an `error` key and, for row
+  // policy denials, an ok-looking status is not guaranteed — check both.
+  if (!res.ok || body?.error) throw new Error(body?.error || `DB error ${res.status}`);
+  return body;
+}
+
+/** Statements the hub accepts in one batched /api/db request. */
+const DB_BATCH_LIMIT = 10;
+
+/** Several statements as one transaction — all apply, or none does. */
+async function dbBatch(statements) {
+  if (!DB || statements.length === 0) return { results: [] };
+  const res = await fetch(DB, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ statements }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok || body?.error) throw new Error(body?.error || `DB error ${res.status}`);
+  return body;
 }
 
 /* ── Data loading ──────────────────────────────────────────────────────────── */
 async function load() {
   try {
+    // No ORDER BY: display_name is encrypted at rest, so sorting it in SQL
+    // orders ciphertext. The hub decrypts on the way out, so the only correct
+    // place to sort is here — matching what addContact/import already do.
     const result = await db(
-      'SELECT id, display_name, email, phone, category, address, notes, birthday, anniversary, created_by, created_at, updated_at FROM app_contacts__contacts ORDER BY display_name'
+      'SELECT id, display_name, email, phone, category, address, notes, birthday, anniversary, created_by, created_at, updated_at FROM app_contacts__contacts'
     );
     contacts = (result.rows ?? []).map(r => ({
       id:          r.id,
@@ -227,7 +249,7 @@ async function load() {
       createdBy:   r.created_by,
       createdAt:   r.created_at,
       updatedAt:   r.updated_at,
-    }));
+    })).sort((a, b) => (a.displayName ?? '').localeCompare(b.displayName ?? ''));
   } catch {
     contacts = [];
   }
@@ -423,13 +445,35 @@ function onDrag(e, over) {
 function onDrop(e) {
   e.preventDefault();
   onDrag(e, false);
+  if (importing) return;
   handleFile(e.dataTransfer.files[0]);
 }
+
+/**
+ * A stable id for the nth contact of a given file, derived from the file's own
+ * bytes. This is what makes an import idempotent: the same .vcf always produces
+ * the same ids, so `INSERT OR IGNORE` turns both a second drop of the same file
+ * and a retry after a half-finished import into a no-op for rows that already
+ * landed. Random ids made both of those duplicate — the whole address book on a
+ * double drop, and half of it on a retry.
+ */
+async function importRowId(fileDigest, index) {
+  const bytes = new TextEncoder().encode(`${fileDigest}:${index}`);
+  const hash = await crypto.subtle.digest('SHA-256', bytes);
+  return [...new Uint8Array(hash).slice(0, 16)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+let importing = false;
 
 async function handleFile(file) {
   if (!file) return;
   const status = document.getElementById('importStatus');
   if (file.size > 1024 * 1024) { status.textContent = 'File too large (max 1 MB)'; return; }
+  // A second file dropped while the first is still going interleaved two
+  // imports and left the status text describing whichever finished last.
+  if (importing) { status.textContent = 'Still importing the last file — one moment.'; return; }
+  importing = true;
+  setImportEnabled(false);
   status.textContent = 'Importing…';
 
   try {
@@ -439,9 +483,10 @@ async function handleFile(file) {
 
     const now       = new Date().toISOString();
     const createdBy = window.__CURRENT_MEMBER?.id ?? null;
+    const digest    = await importRowId(text, 'file');
 
-    const newContacts = parsed.map(p => ({
-      id:          crypto.randomUUID(),
+    const newContacts = await Promise.all(parsed.map(async (p, index) => ({
+      id:          await importRowId(digest, index),
       displayName: p.displayName,
       email:       p.email ?? null,
       phone:       p.phone ?? null,
@@ -453,22 +498,44 @@ async function handleFile(file) {
       createdBy,
       createdAt:   now,
       updatedAt:   now,
-    }));
+    })));
 
-    for (const c of newContacts) {
-      await db(
-        'INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, notes, birthday, anniversary, created_by, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
-        [c.id, c.displayName, c.email, c.phone, c.category, c.address, c.notes, c.birthday, c.anniversary, c.createdBy, c.createdAt, c.updatedAt]
-      );
+    // Chunked transactions rather than one request per contact: a 500-contact
+    // file was 500 sequential round trips, and a failure partway through left
+    // an arbitrary prefix imported with no record of where it stopped.
+    const statements = newContacts.map(c => ({
+      sql: 'INSERT OR IGNORE INTO app_contacts__contacts (id, display_name, email, phone, category, address, notes, birthday, anniversary, created_by, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
+      params: [c.id, c.displayName, c.email, c.phone, c.category, c.address, c.notes, c.birthday, c.anniversary, c.createdBy, c.createdAt, c.updatedAt],
+    }));
+    for (let i = 0; i < statements.length; i += DB_BATCH_LIMIT) {
+      await dbBatch(statements.slice(i, i + DB_BATCH_LIMIT));
     }
 
-    contacts = [...contacts, ...newContacts].sort((a, b) => a.displayName.localeCompare(b.displayName));
-    status.textContent = `✓ Imported ${newContacts.length} contact${newContacts.length !== 1 ? 's' : ''}`;
+    const known = new Set(contacts.map(c => c.id));
+    const added = newContacts.filter(c => !known.has(c.id));
+    contacts = [...contacts, ...added].sort((a, b) => a.displayName.localeCompare(b.displayName));
+    status.textContent = added.length === newContacts.length
+      ? `✓ Imported ${added.length} contact${added.length !== 1 ? 's' : ''}`
+      : `✓ Imported ${added.length} new contact${added.length !== 1 ? 's' : ''} (${newContacts.length - added.length} already here)`;
     render();
     publishExports();
-  } catch {
-    status.textContent = 'Import failed — please try again';
+  } catch (e) {
+    status.textContent = `Import failed — ${e.message ?? 'please try again'}. Re-importing the same file is safe; nothing will be duplicated.`;
+  } finally {
+    importing = false;
+    setImportEnabled(true);
   }
+}
+
+function setImportEnabled(enabled) {
+  const zone = document.getElementById('dropZone');
+  const input = document.getElementById('vcfFile');
+  if (zone) {
+    zone.classList.toggle('busy', !enabled);
+    zone.style.pointerEvents = enabled ? '' : 'none';
+    zone.style.opacity = enabled ? '' : '0.55';
+  }
+  if (input) input.disabled = !enabled;
 }
 
 load();
