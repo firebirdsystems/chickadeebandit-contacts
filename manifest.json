@@ -30,6 +30,70 @@
   "member_references": {
     "contacts": { "column": "created_by", "on_removed": "keep" }
   },
+  "publishes": ["contact.added"],
+  "publish_acls": {
+    "contact.added": { "require_role": "member" }
+  },
+  "automation_actions": {
+    "add_contact": {
+      "title": "Add a contact",
+      "description": "File someone in the shared address book when another app's event carries a person - a new vendor, a sitter who took a shift, a neighbour who reported something.",
+      "params": {
+        "created_by": {
+          "type": "member",
+          "label": "Filed by",
+          "required": true
+        },
+        "display_name": {
+          "type": "text",
+          "label": "Name",
+          "required": true
+        },
+        "category": {
+          "type": "text",
+          "label": "Category",
+          "default": ""
+        },
+        "phone": {
+          "type": "text",
+          "label": "Phone",
+          "default": ""
+        },
+        "email": {
+          "type": "text",
+          "label": "Email",
+          "default": ""
+        },
+        "notes": {
+          "type": "text",
+          "label": "Notes",
+          "default": ""
+        }
+      },
+      "dedupe": {
+        "table": "contacts",
+        "column": "source_event_id"
+      },
+      "steps": [
+        {
+          "op": "insert",
+          "table": "contacts",
+          "values": {
+            "id": "$uuid",
+            "display_name": ":display_name",
+            "category": ":category",
+            "phone": ":phone",
+            "email": ":email",
+            "notes": ":notes",
+            "created_by": ":created_by",
+            "created_at": "$now",
+            "updated_at": "$now",
+            "source_event_id": "$event_id"
+          }
+        }
+      ]
+    }
+  },
   "nav": { "label": "Contacts" },
   "resource_limits": { "max_db_bytes": 10485760 },
   "icon": "👥"

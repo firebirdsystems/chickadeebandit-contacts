@@ -146,6 +146,7 @@ import { categories, filterContacts, parseVCards, searchableFields } from "./log
 
 const DB = window.__DB_URL ?? '';
 const STORE = window.__STORE_URL ?? '';
+const EVENTS = window.__EVENTS_URL ?? '';
 
 let contacts      = [];
 let editingId     = null;
@@ -194,6 +195,22 @@ async function writeStore(key, value) {
 function publishExports() {
   publishEmailExport();
   publishDatesExport();
+}
+
+/* ── Event bus ─────────────────────────────────────────────────────────────── */
+/** Best-effort publish; the row is already written, so a failed publish is not
+ *  fatal and must never roll the insert back. */
+async function publishEvent(type, subjectId, payload = {}) {
+  if (!EVENTS) return;
+  try {
+    await fetch(EVENTS, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, subject_id: subjectId, payload }),
+    });
+  } catch {
+    /* ignore */
+  }
 }
 
 /* ── DB helper ─────────────────────────────────────────────────────────────── */
@@ -407,6 +424,15 @@ async function saveContact() {
         [id, displayName, email, phone, category, address, notes, birthday, anniversary, createdBy, now, now]
       );
       publishExports();
+      // Only the one-at-a-time form publishes. The .vcf importer writes hundreds
+      // of rows in a single submit; a burst of one event per card would be
+      // noise, not news.
+      await publishEvent('contact.added', id, {
+        display_name: displayName,
+        category: category || null,
+        birthday: birthday || null,
+        anniversary: anniversary || null,
+      });
     } catch {
       contacts = prevContacts;
       render();
