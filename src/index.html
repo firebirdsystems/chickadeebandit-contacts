@@ -565,8 +565,7 @@ function setImportEnabled(enabled) {
   if (input) input.disabled = !enabled;
 }
 
-load();
-
+window.render        = render;
 window.openForm      = openForm;
 window.closeForm     = closeForm;
 window.saveContact   = saveContact;
@@ -577,6 +576,8 @@ window.closeImport   = closeImport;
 window.onDrag        = onDrag;
 window.onDrop        = onDrop;
 window.handleFile    = handleFile;
+
+load();
 </script>
 </body>
 </html>
