@@ -17,6 +17,9 @@
     "requires_approval": false
   },
   "storage": "db",
+  "preload": {
+    "contacts": {"sql": "SELECT id, display_name, email, phone, category, address, notes, birthday, anniversary, created_by, created_at, updated_at FROM app_contacts__contacts"}
+  },
   "db_plaintext_columns": ["birthday", "anniversary"],
   "exports": ["contact_emails", "contact_dates"],
   "row_policies": {
