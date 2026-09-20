@@ -1,6 +1,6 @@
 # Contacts
 
-A [Chickadee Bandit](http://chickadeebandit.com) app.
+A [Chickadee Bandit](https://chickadeebandit.com/app-library/contacts) app.
 
 Browse and search family contacts synced from Google Contacts or Apple Contacts.
 
