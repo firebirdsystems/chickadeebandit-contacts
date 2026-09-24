@@ -1,0 +1,184 @@
+{
+  "scenarios": [
+    {
+      "name": "a private contact is hidden from other members while shared contacts stay visible",
+      "members": {
+        "owner": "adult",
+        "other": "adult"
+      },
+      "steps": [
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_contacts__contacts (id, display_name, created_by, visibility, created_at, updated_at) VALUES ('c_pub', 'Dr. Shared', ?, 'everyone', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z'), ('c_priv', 'Secret Friend', ?, 'private', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+          "params": [
+            "{{owner}}",
+            "{{owner}}"
+          ]
+        },
+        {
+          "action": "db",
+          "as": "other",
+          "sql": "SELECT id FROM app_contacts__contacts",
+          "expect": {
+            "status": 200,
+            "rowCount": 1,
+            "rowsContain": [
+              {
+                "id": "c_pub"
+              }
+            ]
+          }
+        },
+        {
+          "action": "db",
+          "as": "owner",
+          "sql": "SELECT id FROM app_contacts__contacts",
+          "expect": {
+            "status": 200,
+            "rowCount": 2
+          }
+        }
+      ]
+    },
+    {
+      "name": "a child cannot edit or delete an adult's contact but can edit their own; adults moderate any contact",
+      "members": {
+        "parent": "adult",
+        "kid": "child"
+      },
+      "steps": [
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_contacts__contacts (id, display_name, created_by, visibility, created_at, updated_at) VALUES ('c_adult', 'Pediatrician', ?, 'everyone', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z'), ('c_kid', 'Best Friend', ?, 'everyone', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+          "params": [
+            "{{parent}}",
+            "{{kid}}"
+          ]
+        },
+        {
+          "action": "db",
+          "as": "kid",
+          "sql": "UPDATE app_contacts__contacts SET category = 'vandalized', updated_at = '2026-01-02T00:00:00Z' WHERE id = 'c_adult'"
+        },
+        {
+          "action": "db",
+          "as": "kid",
+          "sql": "DELETE FROM app_contacts__contacts WHERE id = 'c_adult'"
+        },
+        {
+          "action": "db",
+          "as": "parent",
+          "sql": "SELECT id, category FROM app_contacts__contacts WHERE id = 'c_adult'",
+          "expect": {
+            "status": 200,
+            "rowCount": 1,
+            "rowsContain": [
+              {
+                "id": "c_adult",
+                "category": null
+              }
+            ]
+          }
+        },
+        {
+          "action": "db",
+          "as": "kid",
+          "sql": "UPDATE app_contacts__contacts SET birthday = '2015-05-05', updated_at = '2026-01-02T00:00:00Z' WHERE id = 'c_kid'",
+          "expect": {
+            "status": 200
+          }
+        },
+        {
+          "action": "db",
+          "as": "parent",
+          "sql": "SELECT id, birthday FROM app_contacts__contacts WHERE id = 'c_kid'",
+          "expect": {
+            "status": 200,
+            "rowCount": 1,
+            "rowsContain": [
+              {
+                "id": "c_kid",
+                "birthday": "2015-05-05"
+              }
+            ]
+          }
+        },
+        {
+          "action": "db",
+          "as": "parent",
+          "sql": "DELETE FROM app_contacts__contacts WHERE id = 'c_kid'",
+          "expect": {
+            "status": 200
+          }
+        },
+        {
+          "action": "db",
+          "as": "parent",
+          "sql": "SELECT id FROM app_contacts__contacts",
+          "expect": {
+            "status": 200,
+            "rowCount": 1,
+            "rowsContain": [
+              {
+                "id": "c_adult"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "the hub records the inserting member as created_by even if the client claims someone else",
+      "members": {
+        "parent": "adult",
+        "kid": "child"
+      },
+      "steps": [
+        {
+          "action": "db",
+          "as": "kid",
+          "sql": "INSERT INTO app_contacts__contacts (id, display_name, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+          "params": [
+            "c_new",
+            "Soccer Coach",
+            "{{parent}}",
+            "2026-01-01T00:00:00Z",
+            "2026-01-01T00:00:00Z"
+          ],
+          "expect": {
+            "status": 200
+          }
+        },
+        {
+          "action": "db",
+          "as": "parent",
+          "sql": "SELECT id FROM app_contacts__contacts WHERE created_by = ?",
+          "params": [
+            "{{kid}}"
+          ],
+          "expect": {
+            "status": 200,
+            "rowCount": 1,
+            "rowsContain": [
+              {
+                "id": "c_new"
+              }
+            ]
+          }
+        },
+        {
+          "action": "db",
+          "as": "parent",
+          "sql": "SELECT id FROM app_contacts__contacts WHERE created_by = ?",
+          "params": [
+            "{{parent}}"
+          ],
+          "expect": {
+            "status": 200,
+            "rowCount": 0
+          }
+        }
+      ]
+    }
+  ]
+}
