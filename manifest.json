@@ -22,6 +22,53 @@
   },
   "db_plaintext_columns": ["birthday", "anniversary"],
   "exports": ["contact_emails", "contact_dates"],
+  "export_schemas": {
+    "contact_emails": {
+      "description": "Name/email pairs for external-contact pickers.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "email"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "minLength": 3
+          }
+        }
+      }
+    },
+    "contact_dates": {
+      "description": "Contacts carrying a birthday or anniversary, for Occasions.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "birthday": {
+            "type": "string"
+          },
+          "anniversary": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
   "row_policies": {
     "contacts": {
       "kind": "owner_or_visibility",
