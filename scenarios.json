@@ -179,6 +179,74 @@
           }
         }
       ]
+    },
+    {
+      "name": "in a shared space a participant adult cannot edit or delete another member's shared contact, while the steward can",
+      "context": "shared_space",
+      "members": { "a": "adult", "b": "adult", "steward": "admin" },
+      "steps": [
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_contacts__contacts (id, display_name, created_by, created_at, updated_at, visibility) VALUES (?, ?, ?, ?, ?, ?)",
+          "params": ["c-b", "Plumber", "{{b}}", "2026-01-01T00:00:00Z", "2026-01-01T00:00:00Z", "everyone"]
+        },
+        {
+          "action": "db",
+          "as": "a",
+          "sql": "SELECT display_name FROM app_contacts__contacts WHERE id = ?",
+          "params": ["c-b"],
+          "expect": { "status": 200, "rowCount": 1 }
+        },
+        {
+          "action": "db",
+          "as": "a",
+          "sql": "UPDATE app_contacts__contacts SET display_name = ? WHERE id = ?",
+          "params": ["Hijacked", "c-b"],
+          "expect": { "status": 200 }
+        },
+        {
+          "action": "db",
+          "as": "a",
+          "sql": "DELETE FROM app_contacts__contacts WHERE id = ?",
+          "params": ["c-b"],
+          "expect": { "status": 200 }
+        },
+        {
+          "action": "db",
+          "as": "b",
+          "sql": "SELECT display_name FROM app_contacts__contacts WHERE id = ?",
+          "params": ["c-b"],
+          "expect": { "status": 200, "rowCount": 1, "rowsContain": [{ "display_name": "Plumber" }] }
+        },
+        {
+          "action": "db",
+          "as": "steward",
+          "sql": "UPDATE app_contacts__contacts SET display_name = ? WHERE id = ?",
+          "params": ["Plumber (24h)", "c-b"],
+          "expect": { "status": 200 }
+        },
+        {
+          "action": "db",
+          "as": "b",
+          "sql": "SELECT display_name FROM app_contacts__contacts WHERE id = ?",
+          "params": ["c-b"],
+          "expect": { "status": 200, "rowCount": 1, "rowsContain": [{ "display_name": "Plumber (24h)" }] }
+        },
+        {
+          "action": "db",
+          "as": "steward",
+          "sql": "DELETE FROM app_contacts__contacts WHERE id = ?",
+          "params": ["c-b"],
+          "expect": { "status": 200 }
+        },
+        {
+          "action": "db",
+          "as": "b",
+          "sql": "SELECT id FROM app_contacts__contacts WHERE id = ?",
+          "params": ["c-b"],
+          "expect": { "status": 200, "rowCount": 0 }
+        }
+      ]
     }
   ]
 }
