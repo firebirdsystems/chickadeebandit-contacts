@@ -128,7 +128,7 @@
     </p>
     <div class="import-area" id="dropZone" ondragover="onDrag(event,true)" ondragleave="onDrag(event,false)" ondrop="onDrop(event)">
       <label for="vcfFile">
-        <div style="font-size:1.8rem;margin-bottom:8px">📂</div>
+        <div id="import-glyph" style="margin-bottom:8px"></div>
         Drop a .vcf file here or <u>click to browse</u>
         <input type="file" id="vcfFile" accept=".vcf,text/vcard" onchange="handleFile(this.files[0])" />
       </label>
@@ -141,8 +141,11 @@
 </div>
 
 <script type="module">
-import { hubAlert, hubConfirm, esc, searchMatch } from "/hub-sdk.js";
+import { hubAlert, hubConfirm, esc, searchMatch, glyph } from "/hub-sdk.js";
 import { categories, filterContacts, parseVCards, searchableFields } from "./logic.js";
+
+// The import dialog is static markup; its mark comes from the SDK.
+document.getElementById("import-glyph").innerHTML = glyph("folder", { size: 32 });
 
 const DB = window.__DB_URL ?? '';
 const STORE = window.__STORE_URL ?? '';
@@ -318,10 +321,10 @@ function render() {
           ${c.category ? `<span class="contact-category">${esc(c.category)}</span>` : ''}
         </div>
         <div class="contact-meta">
-          ${c.phone   ? `<span>📞 ${esc(c.phone)}</span>`   : ''}
-          ${c.email   ? `<span>✉️ ${esc(c.email)}</span>`   : ''}
-          ${c.address ? `<span>📍 ${esc(c.address)}</span>` : ''}
-          ${c.birthday ? `<span>🎂 ${esc(fmtDateLabel(c.birthday))}</span>` : ''}
+          ${c.phone   ? `<span>${glyph('phone')} ${esc(c.phone)}</span>`   : ''}
+          ${c.email   ? `<span>${glyph('envelope')} ${esc(c.email)}</span>`   : ''}
+          ${c.address ? `<span>${glyph('location')} ${esc(c.address)}</span>` : ''}
+          ${c.birthday ? `<span>${glyph('cake')} ${esc(fmtDateLabel(c.birthday))}</span>` : ''}
         </div>
         ${c.notes ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:4px">${esc(c.notes)}</div>` : ''}
       </div>
