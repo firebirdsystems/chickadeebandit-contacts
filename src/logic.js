@@ -27,6 +27,25 @@ export function filterContacts(contacts, activeCategory) {
     .sort((a, b) => a.displayName.localeCompare(b.displayName));
 }
 
+function isAdultMember(member) {
+  return !!member && (member.role === "adult" || member.role === "admin");
+}
+
+/**
+ * Whether a member may change a contact someone else added. Mirrors the hub's
+ * rule for the contacts table (owner_or_visibility): any adult in a household,
+ * and only the steward in a shared space. Anyone else's edit or delete of
+ * another member's contact changes nothing.
+ */
+export function supervisesContacts(member, { tenantKind = "household", isAdmin = false } = {}) {
+  return tenantKind === "household" ? isAdultMember(member) : isAdmin === true;
+}
+
+/** Whoever added a contact may always change it; so may whoever supervises contacts. */
+export function canEditContact(contact, member, tenant) {
+  return !!contact && !!member && (contact.createdBy === member.id || supervisesContacts(member, tenant));
+}
+
 /**
  * Parse a .vcf file containing one or more vCards.
  * Handles vCard 2.1, 3.0, and 4.0.

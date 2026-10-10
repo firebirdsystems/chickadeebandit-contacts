@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { categories, filterContacts, searchableFields } from "../src/logic.js";
+import { categories, filterContacts, searchableFields, supervisesContacts, canEditContact } from "../src/logic.js";
 
 function contact(overrides = {}) {
   return {
@@ -77,5 +77,37 @@ describe("searchableFields", () => {
     expect(fields).toContain("555-1234");
     expect(fields).toContain("12 Elm St");
     expect(fields).toContain("school run carpool");
+  });
+});
+
+describe("who may change a contact", () => {
+  const adult = { id: "a1", role: "adult" };
+  const child = { id: "c1", role: "child" };
+  const participant = { tenantKind: "shared_space", spaceKind: "general", isAdmin: false };
+  const steward = { tenantKind: "shared_space", spaceKind: "general", isAdmin: true };
+  const coparent = { tenantKind: "shared_space", spaceKind: "coparenting", isAdmin: true };
+  const theirs = { id: "k1", createdBy: "other" };
+
+  it("supervises: any adult at home, only the steward in a shared space", () => {
+    expect(supervisesContacts(adult)).toBe(true);
+    expect(supervisesContacts(child)).toBe(false);
+    expect(supervisesContacts(null)).toBe(false);
+    expect(supervisesContacts(adult, participant)).toBe(false);
+    expect(supervisesContacts(adult, steward)).toBe(true);
+    expect(supervisesContacts(adult, coparent)).toBe(true);
+  });
+
+  it("whoever added a contact may change it, whatever their role", () => {
+    expect(canEditContact({ id: "k2", createdBy: "c1" }, child)).toBe(true);
+    expect(canEditContact({ id: "k3", createdBy: "a1" }, adult, participant)).toBe(true);
+  });
+
+  it("someone else's contact needs supervision", () => {
+    expect(canEditContact(theirs, adult)).toBe(true);
+    expect(canEditContact(theirs, child)).toBe(false);
+    expect(canEditContact(theirs, adult, participant)).toBe(false);
+    expect(canEditContact(theirs, adult, steward)).toBe(true);
+    expect(canEditContact(theirs, null)).toBe(false);
+    expect(canEditContact(undefined, adult)).toBe(false);
   });
 });

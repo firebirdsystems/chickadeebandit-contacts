@@ -91,6 +91,7 @@
 <div class="overlay" id="formOverlay" style="display:none" onclick="if(event.target===this)closeForm()">
   <div class="modal">
     <h2 id="formTitle">Add Contact</h2>
+    <p id="formNote" style="display:none;font-size:0.85rem;color:var(--muted);margin-bottom:16px"></p>
     <div class="field"><label>Name *</label><input id="fName" type="text" placeholder="Full name" /></div>
     <div class="field"><label>Phone</label><input id="fPhone" type="tel" placeholder="+1 555 000 0000" /></div>
     <div class="field"><label>Email</label><input id="fEmail" type="email" placeholder="name@example.com" /></div>
@@ -112,8 +113,8 @@
       <div class="modal-left">
         <button class="btn btn-danger" id="deleteBtn" onclick="deleteContact()" style="display:none">Delete</button>
       </div>
-      <button class="btn btn-outline" onclick="closeForm()">Cancel</button>
-      <button class="btn" onclick="saveContact()">Save</button>
+      <button class="btn btn-outline" id="cancelBtn" onclick="closeForm()">Cancel</button>
+      <button class="btn" id="saveBtn" onclick="saveContact()">Save</button>
     </div>
   </div>
 </div>
@@ -142,7 +143,7 @@
 
 <script type="module">
 import { hubAlert, hubConfirm, esc, searchMatch, glyph } from "/hub-sdk.js";
-import { categories, filterContacts, parseVCards, searchableFields } from "./logic.js";
+import { categories, filterContacts, parseVCards, searchableFields, canEditContact } from "./logic.js";
 
 // The import dialog is static markup; its mark comes from the SDK.
 document.getElementById("import-glyph").innerHTML = glyph("folder", { size: 32 });
@@ -150,6 +151,15 @@ document.getElementById("import-glyph").innerHTML = glyph("folder", { size: 32 }
 const DB = window.__DB_URL ?? '';
 const STORE = window.__STORE_URL ?? '';
 const EVENTS = window.__EVENTS_URL ?? '';
+const ME = window.__CURRENT_MEMBER ?? null;
+const TENANT = {
+  tenantKind: window.__TENANT_KIND ?? 'household',
+  spaceKind: window.__SPACE_KIND ?? null,
+  isAdmin: window.__IS_ADMIN === true,
+};
+// Whether the viewer may edit or delete a contact. Without a hub (demo mode)
+// there is no member and nothing is refused.
+const canEdit = c => !DB || canEditContact(c, ME, TENANT);
 
 let contacts      = [];
 let editingId     = null;
@@ -338,10 +348,20 @@ function setCategory(cat) {
 }
 
 /* ── Form ──────────────────────────────────────────────────────────────────── */
+const FORM_FIELDS = ['fName', 'fPhone', 'fEmail', 'fCategory', 'fAddress', 'fBirthday', 'fAnniversary', 'fNotes'];
+
 function openForm(id) {
   editingId = id || null;
   const c = id ? contacts.find(x => x.id === id) : null;
-  document.getElementById('formTitle').textContent = c ? 'Edit Contact' : 'Add Contact';
+  // A contact someone else added opens to read: same fields, nothing to save.
+  const readOnly = !!c && !canEdit(c);
+  document.getElementById('formTitle').textContent = readOnly ? 'Contact' : c ? 'Edit Contact' : 'Add Contact';
+  const note = document.getElementById('formNote');
+  note.textContent = `Only the person who added this contact or ${TENANT.tenantKind === 'household' ? 'an adult' : 'the steward'} can change it.`;
+  note.style.display = readOnly ? '' : 'none';
+  for (const f of FORM_FIELDS) document.getElementById(f).disabled = readOnly;
+  document.getElementById('saveBtn').style.display = readOnly ? 'none' : '';
+  document.getElementById('cancelBtn').textContent = readOnly ? 'Close' : 'Cancel';
   document.getElementById('fName').value     = c?.displayName || '';
   document.getElementById('fPhone').value    = c?.phone || '';
   document.getElementById('fEmail').value    = c?.email || '';
@@ -352,9 +372,9 @@ function openForm(id) {
   document.getElementById('fBirthday').value    = isoDate(c?.birthday);
   document.getElementById('fAnniversary').value = isoDate(c?.anniversary);
   document.getElementById('fNotes').value    = c?.notes || '';
-  document.getElementById('deleteBtn').style.display = c ? '' : 'none';
+  document.getElementById('deleteBtn').style.display = c && !readOnly ? '' : 'none';
   document.getElementById('formOverlay').style.display = 'flex';
-  document.getElementById('fName').focus();
+  if (!readOnly) document.getElementById('fName').focus();
 }
 
 function closeForm() {
@@ -385,6 +405,8 @@ function fmtDateLabel(value) {
 }
 
 async function saveContact() {
+  const editing = editingId ? contacts.find(c => c.id === editingId) : null;
+  if (editing && !canEdit(editing)) return;
   const displayName = document.getElementById('fName').value.trim();
   const phone       = document.getElementById('fPhone').value.trim() || null;
   const email       = document.getElementById('fEmail').value.trim() || null;
@@ -399,20 +421,25 @@ async function saveContact() {
   const prevContacts = contacts;
 
   if (editingId) {
-    contacts = contacts.map(c => c.id === editingId
+    // closeForm() clears editingId, so the write below needs its own copy.
+    const id = editingId;
+    contacts = contacts.map(c => c.id === id
       ? { ...c, displayName, phone, email, category, address, birthday, anniversary, notes, updatedAt: now }
       : c);
     closeForm();
     render();
     try {
-      await db(
+      const res = await db(
         'UPDATE app_contacts__contacts SET display_name=?, phone=?, email=?, category=?, address=?, notes=?, birthday=?, anniversary=?, updated_at=? WHERE id=?',
-        [displayName, phone, email, category, address, notes, birthday, anniversary, now, editingId]
+        [displayName, phone, email, category, address, notes, birthday, anniversary, now, id]
       );
+      // A write the hub won't allow still answers 200; `changed` is the answer.
+      if (DB && !res.changed) throw new Error('nothing changed');
       publishExports();
     } catch {
       contacts = prevContacts;
       render();
+      hubAlert('This contact could not be changed.');
     }
   } else {
     const id        = crypto.randomUUID();
@@ -446,16 +473,19 @@ async function saveContact() {
 async function deleteContact() {
   if (!editingId || !await hubConfirm({ message: 'Delete this contact?', confirmLabel: 'Delete', destructive: true })) return;
   const id = editingId;
+  if (!canEdit(contacts.find(c => c.id === id))) return;
   const prevContacts = contacts;
   contacts = contacts.filter(c => c.id !== id);
   closeForm();
   render();
   try {
-    await db('DELETE FROM app_contacts__contacts WHERE id=?', [id]);
+    const res = await db('DELETE FROM app_contacts__contacts WHERE id=?', [id]);
+    if (DB && !res.changed) throw new Error('nothing changed');
     publishExports();
   } catch {
     contacts = prevContacts;
     render();
+    hubAlert('This contact could not be deleted.');
   }
 }
 
