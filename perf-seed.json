@@ -1,0 +1,497 @@
+{
+ "seed": [
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, notes, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-410 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-136 days'))",
+   "params": [
+    "c-1",
+    "Dr. Priya Raman",
+    "office@ramanpediatrics.example",
+    "555-0142",
+    "doctor",
+    "410 Elm St, Suite 2",
+    "Pediatrician. Portal messages answered same day.",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, notes, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-400 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-133 days'))",
+   "params": [
+    "c-2",
+    "Maple Grove Dental",
+    "hello@maplegrovedental.example",
+    "555-0177",
+    "dentist",
+    "88 Maple Ave",
+    "Cleanings every six months, ask for Dana",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, notes, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-390 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-130 days'))",
+   "params": [
+    "c-3",
+    "Lincoln Elementary front office",
+    "office@lincolnelementary.example",
+    "555-0110",
+    "school",
+    "1200 School Rd",
+    "Attendance line is extension 3",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, category, notes, birthday, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, date('now','-38 years','+12 days'), ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-60 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-20 days'))",
+   "params": [
+    "c-4",
+    "Ms. Alvarez",
+    "ralvarez@lincolnelementary.example",
+    "school",
+    "Third grade teacher, prefers email",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, phone, category, notes, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-420 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-140 days'))",
+   "params": [
+    "c-5",
+    "Poison Control",
+    "800-222-1222",
+    "emergency",
+    "24 hours",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, phone, category, notes, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-300 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-100 days'))",
+   "params": [
+    "c-6",
+    "City water emergency line",
+    "555-0199",
+    "emergency",
+    "For main breaks and no-water calls",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, notes, anniversary, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, date('now','-41 years','+20 days'), ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-380 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-126 days'))",
+   "params": [
+    "c-7",
+    "Hank and Judy Olsen",
+    "olsens@example.com",
+    "555-0163",
+    "neighbor",
+    "14 Birch Ln",
+    "Have our spare key. Dog is Biscuit.",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, notes, birthday, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, date('now','-34 years','+3 days'), ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-200 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-66 days'))",
+   "params": [
+    "c-8",
+    "Tasha Reed",
+    "tasha.reed@example.com",
+    "555-0128",
+    "neighbor",
+    "18 Birch Ln",
+    "Waters plants when we travel",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, notes, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-340 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-113 days'))",
+   "params": [
+    "c-9",
+    "Rivera Plumbing",
+    "service@riveraplumbing.example",
+    "555-0155",
+    "plumber",
+    "Replaced the water heater last year, fair prices",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, notes, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-250 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-83 days'))",
+   "params": [
+    "c-10",
+    "Bright Spark Electric",
+    "jobs@brightspark.example",
+    "555-0134",
+    "electrician",
+    "Licensed, did the panel upgrade",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, notes, birthday, anniversary, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, date('now','-77 years','+6 days'), date('now','-52 years','+95 days'), ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-430 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-143 days'))",
+   "params": [
+    "c-11",
+    "Grandma Ruth",
+    "ruth.mayer@example.com",
+    "555-0101",
+    "family",
+    "52 Orchard Way, Cedar Falls",
+    "Call Sundays after church",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, notes, birthday, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, date('now','-79 years','+140 days'), ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-430 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-143 days'))",
+   "params": [
+    "c-12",
+    "Grandpa Joe",
+    "joe.mayer@example.com",
+    "555-0102",
+    "family",
+    "52 Orchard Way, Cedar Falls",
+    "Hearing aid, text is better than calling",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, notes, birthday, anniversary, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, date('now','-58 years','+27 days'), date('now','-30 years','+210 days'), ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-425 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-141 days'))",
+   "params": [
+    "c-13",
+    "Aunt Carol",
+    "carol.hughes@example.com",
+    "555-0118",
+    "family",
+    "7 Lakeview Ct, Madison",
+    "Allergic to shellfish",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, birthday, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, date('now','-60 years','+300 days'), ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-425 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-141 days'))",
+   "params": [
+    "c-14",
+    "Uncle Rob",
+    "rob.hughes@example.com",
+    "555-0119",
+    "family",
+    "7 Lakeview Ct, Madison",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, notes, birthday, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, date('now','-20 years','+48 days'), ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-180 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-60 days'))",
+   "params": [
+    "c-15",
+    "Cousin Lena",
+    "lena.hughes@example.com",
+    "555-0121",
+    "family",
+    "Away at college until May",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, notes, birthday, anniversary, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, date('now','-39 years','+1 days'), date('now','-11 years','+160 days'), ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-365 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-121 days'))",
+   "params": [
+    "c-16",
+    "Maya Chen",
+    "maya.chen@example.com",
+    "555-0170",
+    "friend",
+    "301 Juniper St",
+    "Carpool Tuesdays and Thursdays",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, notes, birthday, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, date('now','-41 years','+75 days'), ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-330 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-110 days'))",
+   "params": [
+    "c-17",
+    "Sam Okafor",
+    "sam.okafor@example.com",
+    "555-0171",
+    "friend",
+    "Running buddy",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, notes, anniversary, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, date('now','-14 years','+33 days'), ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-310 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-103 days'))",
+   "params": [
+    "c-18",
+    "The Petersons",
+    "petersons@example.com",
+    "555-0172",
+    "friend",
+    "9 Willow Bend",
+    "Kids are Eli and Nora",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, notes, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-70 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-23 days'))",
+   "params": [
+    "c-19",
+    "Coach Bennett",
+    "bennett@lincolnyouthsoccer.example",
+    "555-0180",
+    "other",
+    "U10 soccer, practices at Lincoln Field",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, notes, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-290 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-96 days'))",
+   "params": [
+    "c-20",
+    "Paws and Claws Vet",
+    "frontdesk@pawsclaws.example",
+    "555-0190",
+    "other",
+    "230 Harbor Rd",
+    "Biscuit's shots are due in spring",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, notes, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-280 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-93 days'))",
+   "params": [
+    "c-21",
+    "Sunny Side Daycare",
+    "info@sunnysidedaycare.example",
+    "555-0146",
+    "school",
+    "75 Garden St",
+    "Pickup by 5:30",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, phone, category, address, notes, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-270 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-90 days'))",
+   "params": [
+    "c-22",
+    "Northside Urgent Care",
+    "555-0188",
+    "doctor",
+    "600 Northside Pkwy",
+    "Open until 9 pm, takes our insurance",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, notes, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-150 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-50 days'))",
+   "params": [
+    "c-23",
+    "Dr. Lewis, orthodontist",
+    "smile@lewisortho.example",
+    "555-0159",
+    "dentist",
+    "91 Maple Ave",
+    "Adjustment every six weeks",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, notes, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-120 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-40 days'))",
+   "params": [
+    "c-24",
+    "Green Thumb Lawn Care",
+    "crew@greenthumb.example",
+    "555-0136",
+    "other",
+    "Fall cleanup booked",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, notes, birthday, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, date('now','-52 years','+18 days'), ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-110 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-36 days'))",
+   "params": [
+    "c-25",
+    "Mr. Patel, piano",
+    "patel.piano@example.com",
+    "555-0164",
+    "other",
+    "16 Chestnut St",
+    "Lessons Wednesdays at 4",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, notes, birthday, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, date('now','-19 years','+9 days'), ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-95 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-31 days'))",
+   "params": [
+    "c-26",
+    "Jordan the babysitter",
+    "jordan.k@example.com",
+    "555-0193",
+    "other",
+    "CPR certified, drives",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, notes, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-85 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-28 days'))",
+   "params": [
+    "c-27",
+    "Handy Andy",
+    "andy@handyandy.example",
+    "555-0127",
+    "other",
+    "Small repairs, usually a two week wait",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, phone, category, address, notes, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-260 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-86 days'))",
+   "params": [
+    "c-28",
+    "Pharmacy on Main",
+    "555-0105",
+    "doctor",
+    "2 Main St",
+    "Refills ready by text",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, notes, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-240 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-80 days'))",
+   "params": [
+    "c-29",
+    "Insurance agent, Dana Whitfield",
+    "dana@whitfieldins.example",
+    "555-0114",
+    "other",
+    "Home and auto policies",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, notes, birthday, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, date('now','-82 years','+14 days'), ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-428 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-142 days'))",
+   "params": [
+    "c-30",
+    "Nana Bea",
+    "bea.torres@example.com",
+    "555-0103",
+    "family",
+    "Apartment 4B, 60 Pine St",
+    "Birthday dinner at her favorite diner",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, notes, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-50 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-16 days'))",
+   "params": [
+    "c-31",
+    "Leo's mom, Kristen",
+    "kristen.w@example.com",
+    "555-0175",
+    "friend",
+    "Playdates and soccer rides",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-220 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-73 days'))",
+   "params": [
+    "c-32",
+    "Father Mike",
+    "office@stannes.example",
+    "555-0108",
+    "other",
+    "St. Anne's, 40 Church St",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, notes, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-30 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-10 days'))",
+   "params": [
+    "c-33",
+    "Roof and Gutter Pros",
+    "estimates@roofgutter.example",
+    "555-0138",
+    "other",
+    "Quoted gutter guards in September",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, birthday, anniversary, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, date('now','-55 years','+200 days'), date('now','-25 years','+58 days'), ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-426 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-142 days'))",
+   "params": [
+    "c-34",
+    "Aunt Meg",
+    "meg.torres@example.com",
+    "555-0122",
+    "family",
+    "Portland",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, notes, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-205 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-68 days'))",
+   "params": [
+    "c-35",
+    "Heating and Cooling Co.",
+    "dispatch@hvacco.example",
+    "555-0131",
+    "other",
+    "Furnace tune-up every October",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, phone, category, address, notes, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-140 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-46 days'))",
+   "params": [
+    "c-36",
+    "Library children's desk",
+    "555-0116",
+    "other",
+    "300 Main St",
+    "Story time Saturdays at 10",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, notes, birthday, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, date('now','-16 years','+40 days'), ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-160 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-53 days'))",
+   "params": [
+    "c-37",
+    "Tyler, neighbor's teen",
+    "tyler.o@example.com",
+    "555-0166",
+    "neighbor",
+    "14 Birch Ln",
+    "Mows and shovels",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, address, notes, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-230 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-76 days'))",
+   "params": [
+    "c-38",
+    "Dr. Nguyen, eye doctor",
+    "care@clearvieweyes.example",
+    "555-0149",
+    "doctor",
+    "520 Elm St",
+    "Annual exam in March",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, phone, category, notes, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-175 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-58 days'))",
+   "params": [
+    "c-39",
+    "Locksmith, Key Masters",
+    "555-0195",
+    "emergency",
+    "After-hours fee applies",
+    "{{me}}"
+   ]
+  },
+  {
+   "sql": "INSERT INTO app_contacts__contacts (id, display_name, email, phone, category, notes, birthday, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, date('now','-44 years','+110 days'), ?, strftime('%Y-%m-%dT%H:%M:%fZ','now','-45 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-15 days'))",
+   "params": [
+    "c-40",
+    "Emma's dad, Chris",
+    "chris.b@example.com",
+    "555-0176",
+    "friend",
+    "Scout troop co-leader",
+    "{{me}}"
+   ]
+  }
+ ]
+}
