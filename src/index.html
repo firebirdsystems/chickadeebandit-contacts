@@ -41,6 +41,8 @@
 
     .empty { text-align: center; padding: 48px 16px; color: var(--muted); }
     .empty p { margin-bottom: 12px; }
+    .load-error { margin: 0 0 12px; padding: 10px 14px; border-radius: 10px; background: var(--hub-tint-danger, #fee2e2); color: var(--hub-tint-danger-fg, #b91c1c); font-size: 0.9rem; display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+    .load-error-retry { background: none; border: 1px solid currentColor; border-radius: 8px; padding: 5px 10px; font: inherit; font-weight: 600; color: inherit; cursor: pointer; flex-shrink: 0; }
 
     .contact-list { display: flex; flex-direction: column; gap: 2px; }
     .contact-item { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; align-items: flex-start; gap: 12px; cursor: pointer; transition: border-color 0.15s; }
@@ -90,10 +92,10 @@
 <!-- Add / Edit modal -->
 <div class="overlay" id="formOverlay" style="display:none" onclick="if(event.target===this)closeForm()">
   <div class="modal">
-    <h2 id="formTitle">Add Contact</h2>
-    <p id="formNote" style="display:none;font-size:0.85rem;color:var(--muted);margin-bottom:16px"></p>
-    <div class="field"><label>Name *</label><input id="fName" type="text" placeholder="Full name" /></div>
-    <div class="field"><label>Phone</label><input id="fPhone" type="tel" placeholder="+1 555 000 0000" /></div>
+    <h2 id="formTitle" data-testid="form-title">Add Contact</h2>
+    <p id="formNote" data-testid="form-note" style="display:none;font-size:0.85rem;color:var(--muted);margin-bottom:16px"></p>
+    <div class="field"><label>Name *</label><input id="fName" data-testid="field-name" type="text" placeholder="Full name" /></div>
+    <div class="field"><label>Phone</label><input id="fPhone" data-testid="field-phone" type="tel" placeholder="+1 555 000 0000" /></div>
     <div class="field"><label>Email</label><input id="fEmail" type="email" placeholder="name@example.com" /></div>
     <div class="field">
       <label>Category</label>
@@ -111,10 +113,10 @@
     <div class="field"><label>Notes</label><textarea id="fNotes" placeholder="Any useful notes…"></textarea></div>
     <div class="modal-actions">
       <div class="modal-left">
-        <button class="btn btn-danger" id="deleteBtn" onclick="deleteContact()" style="display:none">Delete</button>
+        <button class="btn btn-danger" id="deleteBtn" data-testid="delete-contact" onclick="deleteContact()" style="display:none">Delete</button>
       </div>
-      <button class="btn btn-outline" id="cancelBtn" onclick="closeForm()">Cancel</button>
-      <button class="btn" id="saveBtn" onclick="saveContact()">Save</button>
+      <button class="btn btn-outline" id="cancelBtn" data-testid="cancel-contact" onclick="closeForm()">Cancel</button>
+      <button class="btn" id="saveBtn" data-testid="save-contact" onclick="saveContact()">Save</button>
     </div>
   </div>
 </div>
@@ -206,6 +208,9 @@ async function writeStore(key, value) {
 
 /* Republish both cross-app exports after any change. */
 function publishExports() {
+  // The exports are rebuilt whole from `contacts`. After a failed load that is
+  // at best a partial list, and publishing it would blank what other apps read.
+  if (loadFailed) return;
   publishEmailExport();
   publishDatesExport();
 }
@@ -234,10 +239,10 @@ async function db(sql, params = []) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ sql, params }),
   });
-  const body = await res.json().catch(() => ({}));
+  const body = await res.json().catch(() => null);
   // A refused write comes back as a JSON body with an `error` key and, for row
   // policy denials, an ok-looking status is not guaranteed — check both.
-  if (!res.ok || body?.error) throw new Error(body?.error || `DB error ${res.status}`);
+  if (!res.ok || !body || typeof body !== 'object' || body.error) throw new Error(body?.error || `DB error ${res.status}`);
   return body;
 }
 
@@ -252,12 +257,16 @@ async function dbBatch(statements) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ statements }),
   });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok || body?.error) throw new Error(body?.error || `DB error ${res.status}`);
+  const body = await res.json().catch(() => null);
+  if (!res.ok || !body || typeof body !== 'object' || body.error) throw new Error(body?.error || `DB error ${res.status}`);
   return body;
 }
 
 /* ── Data loading ──────────────────────────────────────────────────────────── */
+// True until a load succeeds: "No contacts yet." would be a guess, and the
+// exports other apps read must not be overwritten with an empty list.
+let loadFailed = false;
+
 async function load() {
   try {
     // No ORDER BY: display_name is encrypted at rest, so sorting it in SQL
@@ -280,8 +289,10 @@ async function load() {
       createdAt:   r.created_at,
       updatedAt:   r.updated_at,
     })).sort((a, b) => (a.displayName ?? '').localeCompare(b.displayName ?? ''));
+    loadFailed = false;
   } catch {
     contacts = [];
+    loadFailed = true;
   }
   render();
   publishExports();
@@ -312,8 +323,13 @@ function render() {
   // id into an inline onclick JS string (an injection vector).
   el.onclick = (e) => {
     const item = e.target.closest('.contact-item[data-id]');
+    if (e.target.closest('[data-testid="load-retry"]')) { load(); return; }
     if (item) openForm(item.dataset.id);
   };
+  const loadError = loadFailed
+    ? `<div class="load-error" data-testid="load-error" role="alert"><span>Couldn’t load your contacts.</span> <button type="button" class="load-error-retry" data-testid="load-retry">Try again</button></div>`
+    : '';
+  if (!filtered.length && loadFailed) { el.innerHTML = loadError; return; }
   if (!filtered.length) {
     el.innerHTML = `<div class="empty">
       <p>${contacts.length ? 'No contacts match your search.' : 'No contacts yet.'}</p>
@@ -322,15 +338,15 @@ function render() {
     return;
   }
 
-  el.innerHTML = filtered.map(c => `
-    <div class="contact-item" data-id="${esc(c.id)}">
+  el.innerHTML = loadError + filtered.map(c => `
+    <div class="contact-item" data-testid="contact-item" data-contact-id="${esc(c.id)}" data-id="${esc(c.id)}">
       <div class="avatar">${esc((c.displayName[0]||'?').toUpperCase())}</div>
       <div class="contact-info">
-        <div class="contact-name">
+        <div class="contact-name" data-testid="contact-name">
           ${esc(c.displayName)}
           ${c.category ? `<span class="contact-category">${esc(c.category)}</span>` : ''}
         </div>
-        <div class="contact-meta">
+        <div class="contact-meta" data-testid="contact-meta">
           ${c.phone   ? `<span>${glyph('phone')} ${esc(c.phone)}</span>`   : ''}
           ${c.email   ? `<span>${glyph('envelope')} ${esc(c.email)}</span>`   : ''}
           ${c.address ? `<span>${glyph('location')} ${esc(c.address)}</span>` : ''}
@@ -466,6 +482,7 @@ async function saveContact() {
     } catch {
       contacts = prevContacts;
       render();
+      hubAlert('This contact could not be saved.');
     }
   }
 }

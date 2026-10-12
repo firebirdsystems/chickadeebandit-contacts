@@ -1,0 +1,230 @@
+{
+  "scenarios": [
+    {
+      "name": "an edit to an existing contact is still there after a reload",
+      "members": {
+        "member": "adult"
+      },
+      "steps": [
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_contacts__contacts (id, display_name, phone, category, created_by, created_at, updated_at) VALUES ('c-doc', ?, ?, 'doctor', ?, ?, ?)",
+          "params": [
+            "Dr Alice Hart",
+            "555-0100",
+            "{{member}}",
+            "2026-01-05T10:00:00Z",
+            "2026-01-05T10:00:00Z"
+          ]
+        },
+        {
+          "action": "open",
+          "as": "member"
+        },
+        {
+          "action": "expectText",
+          "as": "member",
+          "selector": "[data-testid=\"contact-item\"][data-contact-id=\"c-doc\"] [data-testid=\"contact-name\"]",
+          "text": "Dr Alice Hart"
+        },
+        {
+          "action": "click",
+          "as": "member",
+          "selector": "[data-testid=\"contact-item\"][data-contact-id=\"c-doc\"]"
+        },
+        {
+          "action": "expectVisible",
+          "as": "member",
+          "selector": "[data-testid=\"save-contact\"]"
+        },
+        {
+          "action": "fill",
+          "as": "member",
+          "selector": "[data-testid=\"field-name\"]",
+          "value": "Dr Alice Hartley"
+        },
+        {
+          "action": "fill",
+          "as": "member",
+          "selector": "[data-testid=\"field-phone\"]",
+          "value": "555-0199"
+        },
+        {
+          "action": "click",
+          "as": "member",
+          "selector": "[data-testid=\"save-contact\"]"
+        },
+        {
+          "action": "expectHidden",
+          "as": "member",
+          "selector": "[data-testid=\"save-contact\"]"
+        },
+        {
+          "action": "reload",
+          "as": "member"
+        },
+        {
+          "action": "expectText",
+          "as": "member",
+          "selector": "[data-testid=\"contact-item\"][data-contact-id=\"c-doc\"] [data-testid=\"contact-name\"]",
+          "text": "Dr Alice Hartley"
+        },
+        {
+          "action": "expectText",
+          "as": "member",
+          "selector": "[data-testid=\"contact-item\"][data-contact-id=\"c-doc\"] [data-testid=\"contact-meta\"]",
+          "text": "555-0199"
+        },
+        {
+          "action": "expectNoText",
+          "as": "member",
+          "selector": "[data-testid=\"contact-item\"][data-contact-id=\"c-doc\"] [data-testid=\"contact-meta\"]",
+          "text": "555-0100"
+        },
+        {
+          "action": "expectCount",
+          "as": "member",
+          "selector": "[data-testid=\"contact-item\"]",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "name": "in a shared space a participant opens someone else's contact read-only and their own to edit; the steward may edit any",
+      "context": "shared_space",
+      "members": {
+        "steward": "admin",
+        "pat": "adult"
+      },
+      "steps": [
+        {
+          "action": "seedRaw",
+          "sql": "INSERT INTO app_contacts__contacts (id, display_name, phone, category, created_by, created_at, updated_at) VALUES ('c-steward', ?, ?, 'plumber', ?, ?, ?), ('c-pat', ?, ?, 'neighbor', ?, ?, ?)",
+          "params": [
+            "Hall Plumbing",
+            "555-0101",
+            "{{steward}}",
+            "2026-01-05T10:00:00Z",
+            "2026-01-05T10:00:00Z",
+            "Nora Next Door",
+            "555-0102",
+            "{{pat}}",
+            "2026-01-05T10:00:00Z",
+            "2026-01-05T10:00:00Z"
+          ]
+        },
+        {
+          "action": "open",
+          "as": "pat"
+        },
+        {
+          "action": "expectVisible",
+          "as": "pat",
+          "selector": "[data-testid=\"contact-item\"][data-contact-id=\"c-steward\"]"
+        },
+        {
+          "action": "click",
+          "as": "pat",
+          "selector": "[data-testid=\"contact-item\"][data-contact-id=\"c-steward\"]"
+        },
+        {
+          "action": "expectVisible",
+          "as": "pat",
+          "selector": "[data-testid=\"field-name\"]"
+        },
+        {
+          "action": "expectHidden",
+          "as": "pat",
+          "selector": "[data-testid=\"save-contact\"]"
+        },
+        {
+          "action": "expectHidden",
+          "as": "pat",
+          "selector": "[data-testid=\"delete-contact\"]"
+        },
+        {
+          "action": "expectCount",
+          "as": "pat",
+          "selector": "[data-testid=\"field-name\"]:disabled",
+          "count": 1
+        },
+        {
+          "action": "expectText",
+          "as": "pat",
+          "selector": "[data-testid=\"form-note\"]",
+          "text": "the steward"
+        },
+        {
+          "action": "click",
+          "as": "pat",
+          "selector": "[data-testid=\"cancel-contact\"]"
+        },
+        {
+          "action": "expectHidden",
+          "as": "pat",
+          "selector": "[data-testid=\"field-name\"]"
+        },
+        {
+          "action": "click",
+          "as": "pat",
+          "selector": "[data-testid=\"contact-item\"][data-contact-id=\"c-pat\"]"
+        },
+        {
+          "action": "expectVisible",
+          "as": "pat",
+          "selector": "[data-testid=\"save-contact\"]"
+        },
+        {
+          "action": "expectVisible",
+          "as": "pat",
+          "selector": "[data-testid=\"delete-contact\"]"
+        },
+        {
+          "action": "expectHidden",
+          "as": "pat",
+          "selector": "[data-testid=\"form-note\"]"
+        },
+        {
+          "action": "open",
+          "as": "steward"
+        },
+        {
+          "action": "expectVisible",
+          "as": "steward",
+          "selector": "[data-testid=\"contact-item\"][data-contact-id=\"c-pat\"]"
+        },
+        {
+          "action": "click",
+          "as": "steward",
+          "selector": "[data-testid=\"contact-item\"][data-contact-id=\"c-pat\"]"
+        },
+        {
+          "action": "expectVisible",
+          "as": "steward",
+          "selector": "[data-testid=\"field-name\"]"
+        },
+        {
+          "action": "expectVisible",
+          "as": "steward",
+          "selector": "[data-testid=\"save-contact\"]"
+        },
+        {
+          "action": "expectVisible",
+          "as": "steward",
+          "selector": "[data-testid=\"delete-contact\"]"
+        },
+        {
+          "action": "expectCount",
+          "as": "steward",
+          "selector": "[data-testid=\"field-name\"]:disabled",
+          "count": 0
+        },
+        {
+          "action": "expectHidden",
+          "as": "steward",
+          "selector": "[data-testid=\"form-note\"]"
+        }
+      ]
+    }
+  ]
+}
