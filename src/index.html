@@ -597,7 +597,8 @@ async function handleFile(file) {
     render();
     publishExports();
   } catch (e) {
-    status.textContent = `Import failed — ${e.message ?? 'please try again'}. Re-importing the same file is safe; nothing will be duplicated.`;
+    console.error(e);
+    status.textContent = 'Couldn’t import the contacts — try again. Re-importing the same file is safe; nothing will be duplicated.';
   } finally {
     importing = false;
     setImportEnabled(true);
