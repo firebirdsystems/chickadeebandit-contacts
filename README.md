@@ -2,13 +2,15 @@
 
 A [Chickadee Bandit](https://chickadeebandit.com/app-library/contacts) app.
 
-Browse and search family contacts synced from Google Contacts or Apple Contacts.
+A shared household address book: doctors, schools, neighbors, emergency contacts, with birthdays and anniversaries.
 
 ## Features
 
 - Full contact list with search and letter-group filtering
-- Synced from Google Contacts or Apple Contacts via hub settings
-- Read-only viewer — edits happen in your native contacts app
+- Add and edit contacts in the app: name, phone, email, address and notes
+- Categories such as doctor, dentist and school
+- Import from a vCard (.vcf) file exported from another contacts app
+- No live sync with Google Contacts or Apple Contacts
 
 ## Install
 
